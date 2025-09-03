@@ -624,6 +624,8 @@
                     localStorage.setItem('theme', theme);
                 });
             });
+            // Also perform a rating-only Danbooru request on every page load/refresh
+            fetchDanbooruRatingOnly();
         });
 
         // Global variables for the search functionality
@@ -1041,6 +1043,29 @@
             messageBox.classList.remove('visible');
         });
         
+        // New: fetch Danbooru posts with only the rating tag (runs on page load)
+        async function fetchDanbooruRatingOnly() {
+            try {
+                // Ensure we query Danbooru and start at page 1
+                currentSite = 'danbooru';
+                currentPage = 1;
+
+                const apiUrl = `https://danbooru.donmai.us/posts.json?tags=-furry+-futanari+rating:s&page=${currentPage}&limit=100`;
+                const proxyUrl = `http://localhost:9090/proxy?url=${encodeURIComponent(apiUrl)}`;
+
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const rawResults = await response.json();
+
+                // Normalize, sort and render like the regular flow
+                searchResults = normalizeResults(rawResults, 'danbooru');
+                searchResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+                renderImages();
+                updatePagination();
+            } catch (error) {
+                console.error('Danbooru initial fetch failed:', error);
+            }
+        }
     </script>
 </body>
 </html>
