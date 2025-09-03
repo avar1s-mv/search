@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Search Gallery</title>
+    <link rel="icon" type="image/x-icon" href="/asset/favicon.ico">
+    <style>
+        body {
+            font-family: Arial Black, Arial, Helvetica, sans-serif;
+            color: #e3e8f0;
+            font-weight: bold;
+            margin: 0;
+            background: 
+                linear-gradient(135deg, var(--theme-bg-1) 25%, var(--theme-bg-2) 100%),
+                url('') center/cover no-repeat fixed;
+            color: var(--theme-text);
+        }
+
+        .main-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            max-width: 100vw;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #e3e8f0;
+            font-size: 45px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 16px #000a, 0 0 2px #1a237e;
+        }
+
+        .container {
+            column-count: 5;              /* Number of columns (adjust for screen size) */
+            column-gap: 20px;             /* Space between columns */
+            width: 100%;
+            max-width: 100%;
+            margin: 30px auto 0;
+            padding: 24px;
+            background: var(--theme-card);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+        }
+
+        .img-wrapper {
+            break-inside: avoid;       /* Masonry fix */
+            margin-bottom: 20px;
+            position: relative;        /* Needed for absolute children */
+            display: inline-block;     /* Ensure it respects column flow */
+            width: 100%;               /* Make images stretch in column */
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 15px;
+            box-shadow: 0 2px 16px #000a;
+            background: #111a2f;
+            transition: transform 0.7s ease, box-shadow 0.7s ease;
+        }
+
+        .img-wrapper:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 32px #1a237e99;
+            z-index: 4;
+        }
+
+        .resolution-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(20, 30, 60, 0.452);
+            color: #e3e8f0;
+            padding: 5px 10px;
+            border-radius: 7.5px;
+            font-size: 15px;
+            font-weight: bold;
+            z-index: 4;
+            pointer-events: none;
+            backdrop-filter: blur(5px);
+            transition: transform .30s cubic-bezier(.4,2,.6,1), opacity .30s cubic-bezier(.4,2,.6,1);
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .img-skeleton {
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            background: #1a1f2e1a;
+            position: relative;
+            overflow: hidden;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            break-inside: avoid;
+            box-shadow: 0 2px 16px #000a;
+        }
+
+        .img-skeleton::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(45deg, transparent 25%, rgba(83, 103, 175, 0.5) 50%, transparent 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            pointer-events: none;
+            border-radius: inherit;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .search-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+            background: var(--theme-card);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--theme-accent);
+            background: var(--theme-bg-2);
+            color: var(--theme-text);
+            font-size: 16px;
+            outline: none;
+        }
+
+        .search-button {
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            background: var(--theme-accent);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .search-button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .search-button:active {
+            transform: translateY(0);
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .tag {
+            padding: 6px 12px;
+            background: var(--theme-bg-2);
+            color: var(--theme-text);
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tag:hover {
+            background: var(--theme-accent);
+            color: white;
+        }
+
+        .tag.selected {
+            background: var(--theme-accent);
+            color: white;
+        }
+
+        .filter-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            margin-top: 30px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .explicit-label, .moderate-label, .safe-label {
+            font-size: 22px;
+            vertical-align: middle;
+            margin-left: 4px;
+            color: #e3e8f0;
+            font-weight: bold;
+            letter-spacing: 1px;
+            user-select: none;
+            text-shadow: 0 1px 4px #000a;
+        }
+        
+        .rating-button {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            background: var(--theme-bg-2);
+            color: var(--theme-text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .rating-button.active {
+            background: var(--theme-accent);
+            color: white;
+        }
+        
+        .rating-button:hover {
+            background: var(--theme-accent);
+            color: white;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .page-button {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            background: var(--theme-bg-2);
+            color: var(--theme-text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .page-button.active {
+            background: var(--theme-accent);
+            color: white;
+        }
+
+        .page-button:hover:not(.disabled) {
+            background: var(--theme-accent);
+            color: white;
+        }
+
+        .page-button.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #theme-switcher {
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            z-index: 10000;
+        }
+
+        #theme-toggle {
+            background: var(--theme-bg-1);
+            backdrop-filter: blur(8px);
+            border: none;
+            border-radius: 14px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #e3e8f0;
+            cursor: pointer;
+            box-shadow: 0 2px 12px #0003;
+            transition: all 0.3s ease;
+        }
+
+        #theme-toggle:hover {
+            background: rgba(40, 50, 90, 0.7);
+        }
+
+        #theme-options {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: var(--theme-bg-2);
+            backdrop-filter: blur(12px);
+            border-radius: 14px;
+            padding: 10px 0;
+            margin-top: 8px;
+            box-shadow: 0 4px 24px #0006;
+            min-width: 180px;
+            overflow: hidden;
+        }
+
+        #theme-options div {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #theme-options div:hover {
+            background: var(--theme-accent);
+        }
+
+        #theme-switcher:hover #theme-options {
+            display: block;
+        }
+
+        /* Default Theme */
+        :root {
+            --theme-bg-1: rgba(10,20,40,0.5);
+            --theme-bg-2: rgba(26,35,126,0.5);
+            --theme-text: #e3e8f0;
+            --theme-card: rgba(20, 30, 60, 0.253);
+            --theme-accent: #3949ab;
+        }
+
+        /* Deep Purple Theme */
+        .theme-deep-purple {
+            --theme-bg-1: rgba(30, 0, 50, 0.6);
+            --theme-bg-2: rgba(80, 0, 100, 0.5);
+            --theme-text: #f0e6ff;
+            --theme-card: rgba(40, 20, 60, 0.3);
+            --theme-accent: #7e57c2;
+        }
+
+        /* Emerald Night Theme */
+        .theme-emerald {
+            --theme-bg-1: rgba(10, 40, 20, 0.5);
+            --theme-bg-2: rgba(15, 80, 40, 0.5);
+            --theme-text: #e3f7e8;
+            --theme-card: rgba(20, 60, 30, 0.3);
+            --theme-accent: #2e7d32;
+        }
+
+        /* Crimson Dusk Theme */
+        .theme-crimson {
+            --theme-bg-1: rgba(50, 10, 10, 0.5);
+            --theme-bg-2: rgba(100, 20, 20, 0.5);
+            --theme-text: #ffe6e6;
+            --theme-card: rgba(60, 20, 20, 0.3);
+            --theme-accent: #c62828;
+        }
+
+        @media (max-width: 720px) {
+            body {
+                padding: 5px;
+            }
+            .container {
+                column-count: 2;
+                padding: 5px;
+                margin: 5px auto 0;
+                column-gap: 5px;
+            }
+            .gallery-img {
+                margin-bottom: 5px;
+            }
+            h1 {
+                font-size: 28px;
+                margin-bottom: 5px;
+            }
+            .filter-row {
+                gap: 8px;
+                margin-top: 15px;
+                margin-bottom: 15px;
+            }
+            .explicit-label, .moderate-label, .safe-label {
+                font-size: 16px;
+                margin-left: 2px;
+            }
+            .switch {
+                width: 50px;
+                height: 28px;
+            }
+        }
+
+        @media (min-width: 1000px) and (max-width: 2000px) {
+            .container { 
+                column-count: 3;
+            }
+        }
+        @media (min-width: 2000px) and (max-width: 2500px) {
+            .container { column-count: 4; }
+        }
+        @media (min-width: 2500px) {
+            .container { column-count: 5; }
+        }
+
+        /* Loading indicator */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--theme-accent);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Site selector */
+        .site-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .site-button {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            background: var(--theme-bg-2);
+            color: var(--theme-text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .site-button.active {
+            background: var(--theme-accent);
+            color: white;
+        }
+
+        .site-button:hover {
+            background: var(--theme-accent);
+            color: white;
+        }
+        #wallpaper-overlay {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        z-index: 19999;
+        animation: 
+            zoomIn 1.5s cubic-bezier(0.2, 0.8, 0.4, 1),
+            fadeOut 1s ease-in-out 1.3s forwards;
+        }
+        @keyframes zoomIn {
+            from { transform: scale(1.2); }
+            to { transform: scale(1); }
+        }
+
+        @keyframes fadeOut {
+            to { 
+                opacity: 0;
+                filter: blur(10px);
+                z-index: -1;
+            }
+        }
+
+        /* Custom message box style */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--theme-card);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+            z-index: 20000;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .message-box.visible {
+            display: flex;
+        }
+
+        .message-box-text {
+            margin-bottom: 15px;
+        }
+
+        .message-box-button {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            background: var(--theme-accent);
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .message-box-button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div id="wallpaper-overlay"></div>
+    <div id="theme-switcher">
+        <button id="theme-toggle">Theme ▼</button>
+        <div id="theme-options">
+            <div data-theme="default">Midnight Blue</div>
+            <div data-theme="deep-purple">Deep Purple</div>
+            <div data-theme="emerald">Emerald Night</div>
+            <div data-theme="crimson">Crimson Dusk</div>
+        </div>
+    </div>
+
+    <div class="main-wrapper">
+        <h1>Image Search Gallery</h1>
+        
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search tags...">
+                <button class="search-button" id="searchButton">Search</button>
+            </div>
+            
+            <div class="site-selector">
+                <button class="site-button active" data-site="danbooru">Danbooru</button>
+                <button class="site-button" data-site="yandere">Yande.re</button>
+                <button class="site-button" data-site="gelbooru">Gelbooru</button>
+                <button class="site-button" data-site="kona">Konachan</button>
+            </div>
+            
+            <div class="filter-row">
+                <button class="rating-button active" data-rating="s">Safe ✅</button>
+                <button class="rating-button" data-rating="q">Moderate ⚠️</button>
+                <button class="rating-button" data-rating="e">Explicit 🔞</button>
+            </div>
+            
+            <div id="tagsContainer" class="tags-container"></div>
+        </div>
+        <div class="pagination" id="pagination">
+            <button class="page-button disabled" id="prevPage">Previous</button>
+            <span id="pageInfo">Page 1 of 1</span>
+            <button class="page-button disabled" id="nextPage">Next</button>
+        </div>
+        <div class="container" id="imageContainer"></div>
+        
+    </div>
+
+    <!-- Custom message box -->
+    <div id="messageBox" class="message-box">
+        <div id="messageText" class="message-box-text"></div>
+        <button id="messageCloseButton" class="message-box-button">OK</button>
+    </div>
+    <script>
+        // Background images and theme switching (preserved from your code)
+        const backgroundImages = [];
+
+        const max = 11;
+        const letters = ['', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+        for (let i = 0; i < max; i++) {
+            const number = (i % 9) + 1;
+            const letter = letters[Math.floor(i / 9)];
+            backgroundImages.push(`./asset/bgs/${number}${letter}.webp`);
+        }
+
+        function preloadBackgroundImages() {
+            backgroundImages.forEach(url => {
+                const img = new Image();
+                img.src = url;
+            });
+        }
+
+        function setRandomBackground() {
+            let randomImage;
+            do {
+                randomImage = backgroundImages[Math.floor(Math.random() * backgroundImages.length)];
+            } while (randomImage === localStorage.getItem('lastBackground') && backgroundImages.length > 1);
+            
+            localStorage.setItem('lastBackground', randomImage);
+            
+            const overlay = document.getElementById('wallpaper-overlay');
+            overlay.style.backgroundImage = `url('${randomImage}')`;
+            document.body.style.backgroundImage = `
+                linear-gradient(135deg, rgba(10,20,40,0.5) 0%, rgba(26,35,126,0.5) 100%),
+                url('${randomImage}')
+            `;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            preloadBackgroundImages();
+            setRandomBackground();
+            loadTags();
+            
+            const themeOptions = document.querySelectorAll('#theme-options div');
+            const savedTheme = localStorage.getItem('theme') || 'default';
+            
+            document.body.classList.add(`theme-${savedTheme}`);
+            
+            themeOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const theme = option.getAttribute('data-theme');
+                    
+                    document.body.classList.remove(
+                        'theme-default',
+                        'theme-deep-purple',
+                        'theme-emerald',
+                        'theme-crimson'
+                    );
+                    
+                    if (theme !== 'default') {
+                        document.body.classList.add(`theme-${theme}`);
+                    }
+                    
+                    localStorage.setItem('theme', theme);
+                });
+            });
+        });
+
+        // Global variables for the search functionality
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentSite = 'danbooru'; // Adjusted to Danbooru as a default based on the API request you mentioned
+        let currentRating = 's'; // Default rating
+        let searchResults = [];
+
+        // DOM elements
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const tagsContainer = document.getElementById('tagsContainer');
+        const imageContainer = document.getElementById('imageContainer');
+        const prevPageButton = document.getElementById('prevPage');
+        const nextPageButton = document.getElementById('nextPage');
+        const pageInfo = document.getElementById('pageInfo');
+        const siteButtons = document.querySelectorAll('.site-button');
+        const ratingButtons = document.querySelectorAll('.rating-button');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const messageCloseButton = document.getElementById('messageCloseButton');
+        
+        // Show custom message box
+        function showMessage(message) {
+            messageText.textContent = message;
+            messageBox.classList.add('visible');
+        }
+
+        // Debounce function to limit API requests
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), delay);
+            };
+        }
+
+        // Function to fetch tag suggestions
+        let allTags = []; // Cache loaded tags
+
+        // Load tags.json once at startup
+        async function loadTags() {
+            try {
+                const response = await fetch('./tags.json');
+                if (!response.ok) throw new Error('Failed to load tags.json');
+                const data = await response.json();
+                
+                // Validate structure
+                if (!Array.isArray(data)) throw new Error('tags.json is not an array');
+                allTags = data.filter(tag => 
+                    tag && typeof tag === 'object' && tag.name && tag.post_count
+                );
+                
+                console.log(`Loaded ${allTags.length} valid tags`);
+            } catch (error) {
+                console.error('Error loading tags:', error);
+                allTags = []; // Fallback to empty array
+            }
+        }
+
+        // Filter tags locally (no API calls)
+        function fetchTags(searchTerm) {
+            if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length < 1) {
+                return [];
+            }
+            
+            const term = searchTerm.trim();
+            const lastWord = term.split(' ').pop();
+            
+            return allTags
+                // First filter: Ensure we only work with valid tag objects
+                .filter(tag => {
+                    return (
+                        tag &&
+                        typeof tag === 'object' &&
+                        tag.name &&
+                        typeof tag.name === 'string'
+                    );
+                })
+                // Second filter: Actual search matching
+                .filter(tag => tag.name.includes(lastWord))
+                .sort((a, b) => b.post_count - a.post_count)
+                .slice(0, 20)
+                .map(tag => tag.name);
+        }
+
+        // Show tag suggestions
+        function showTagSuggestions(suggestions) {
+            tagsContainer.innerHTML = '';
+            
+            suggestions.forEach(tag => {
+                const tagElement = document.createElement('div');
+                tagElement.className = 'tag';
+                tagElement.textContent = tag;
+                tagElement.addEventListener('click', () => fillSearchBar(tag));
+                tagsContainer.appendChild(tagElement);
+            });
+        }
+
+        // Fill search bar with clicked tag
+        function fillSearchBar(tag) {
+            const currentTags = searchInput.value.trim().split(' ');
+            if (currentTags.length > 0 && currentTags[currentTags.length - 1] !== '') {
+                currentTags[currentTags.length - 1] = tag;
+                searchInput.value = currentTags.join(' ') + ' ';
+            } else {
+                searchInput.value += tag + ' ';
+            }
+            searchInput.focus();
+            tagsContainer.innerHTML = ''; // Hide suggestions after selection
+        }
+        // Perform search function
+        async function performSearch() {
+            const tags = searchInput.value.trim().split(' ').filter(t => t);
+            if (tags.length === 0) {
+                showMessage('Please enter at least one tag.');
+                return;
+            }
+
+            imageContainer.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            
+            try {
+                const apiEndpoints = {
+                    'danbooru': `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&page=${currentPage}&limit=100`,
+                    'yandere': `https://yande.re/post.json?tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&page=${currentPage}&limit=100`,
+                    'gelbooru': `https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&pid=${currentPage - 1}&limit=100`,
+                    'kona': `https://konachan.net/post.json?tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&limit=100&page=${currentPage}`
+                };
+
+                const apiUrl = apiEndpoints[currentSite];
+                if (!apiUrl) {
+                    throw new Error('Invalid site selected');
+                }
+
+                // Use a CORS proxy
+                const proxyUrl = `http://localhost:9090/proxy?url=${encodeURIComponent(apiUrl)}`;
+                const response = await fetch(proxyUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                let rawResults = await response.json();
+                
+                // Normalize the results from different boorus
+                searchResults = normalizeResults(rawResults, currentSite);
+                
+                // Sort by score (highest first) with fallback for posts without score
+                searchResults.sort((a, b) => {
+                    const scoreA = a.score || 0;
+                    const scoreB = b.score || 0;
+                    return scoreB - scoreA; // Descending order (highest first)
+                });
+                
+                renderImages();
+                updatePagination();
+            } catch (error) {
+                console.error('Search error:', error);
+                imageContainer.innerHTML = '<div class="error">Error searching images. Please try again.</div>';
+                showMessage('Search failed: ' + error.message);
+            }
+        }
+
+        // Normalize results from different booru APIs
+        function normalizeResults(results, site) {
+            switch(site) {
+                case 'danbooru':
+                    return results.map(post => ({
+                        id: post.id,
+                        file_url: post.file_url,
+                        preview_url: post.preview_file_url || post.large_file_url || post.file_url,
+                        sample_url: post.large_file_url || post.file_url,
+                        image_width: post.image_width,
+                        image_height: post.image_height,
+                        tags: post.tag_string,
+                        rating: post.rating,
+                        score: post.score
+                    }));
+                
+                case 'yandere':
+                    return results.map(post => ({
+                        id: post.id,
+                        file_url: post.file_url,
+                        preview_url: post.preview_url || post.sample_url || post.file_url,
+                        sample_url: post.sample_url || post.file_url,
+                        image_width: post.width,
+                        image_height: post.height,
+                        tags: post.tags,
+                        rating: post.rating,
+                        score: post.score
+                    }));
+                
+                case 'gelbooru':
+                    return results.post.map(post => ({
+                        id: post.id,
+                        file_url: post.file_url,
+                        preview_url: post.preview_url || post.sample_url || post.file_url,
+                        sample_url: post.sample_url || post.file_url,
+                        image_width: post.width,
+                        image_height: post.height,
+                        tags: post.tags,
+                        rating: post.rating,
+                        score: post.score
+                    }));
+                
+                default:
+                    return [];
+            }
+        }
+
+        // Normalize results from different booru APIs
+        function normalizeResults(results, site) {
+            switch(site) {
+                case 'danbooru':
+                    return results.map(post => ({
+                        id: post.id,
+                        file_url: post.file_url,
+                        preview_url: post.preview_file_url || post.large_file_url || post.file_url,
+                        sample_url: post.large_file_url || post.file_url,
+                        image_width: post.image_width,
+                        image_height: post.image_height,
+                        tags: post.tag_string,
+                        rating: post.rating,
+                        score: post.score
+                    }));
+                
+                case 'yandere':
+                    return results.map(post => ({
+                        id: post.id,
+                        file_url: post.file_url,
+                        preview_url: post.preview_url || post.sample_url || post.file_url,
+                        sample_url: post.sample_url || post.file_url,
+                        image_width: post.width,
+                        image_height: post.height,
+                        tags: post.tags,
+                        rating: post.rating,
+                        score: post.score
+                    }));
+                
+                case 'gelbooru':
+                    // Gelbooru returns an object with a 'post' property containing the array
+                    const posts = results.post || [];
+                    return posts.map(post => ({
+                        id: post.id,
+                        file_url: post.file_url,
+                        preview_url: post.preview_url || post.sample_url || post.file_url,
+                        sample_url: post.sample_url || post.file_url,
+                        image_width: post.width,
+                        image_height: post.height,
+                        tags: post.tags,
+                        rating: post.rating,
+                        score: post.score
+                    }));
+                
+                default:
+                    return [];
+            }
+        }
+        function getPreviewUrl(post) {
+            // Danbooru
+            if (post.preview_url) {
+                return post.preview_url;
+            }
+            // Yande.re
+            else if (post.sample_url) {
+                return post.sample_url;
+            }
+            // Gelbooru/Safebooru
+            else if (post.preview_url) {
+                return post.preview_url;
+            }
+            // Fallback to full URL if no preview available
+            return post.file_url;
+        }
+
+        // Render images in the container
+        function renderImages() {
+            imageContainer.innerHTML = '';
+            
+            if (searchResults.length === 0) {
+                imageContainer.innerHTML = '<div class="error">No results found</div>';
+                return;
+            }
+            
+            searchResults.forEach(post => {
+                const imgWrapper = document.createElement('div');
+                imgWrapper.className = 'img-wrapper';
+                
+                // Use preview_url if available, otherwise fall back to sample_url or file_url
+                const previewUrl = currentSite === "yandere"
+                ? post.preview_url
+                : (post.sample_url || post.preview_url || post.file_url);
+                const fullUrl = post.file_url;
+
+                
+                let resolutionBadge = '';
+                if (post.image_width && post.image_height) {
+                    const maxDim = Math.max(post.image_width, post.image_height);
+                    let resolution = '';
+                    
+                    if (maxDim >= 8000) resolution = '8K';
+                    else if (maxDim >= 6000) resolution = '6K';
+                    else if (maxDim >= 5000) resolution = '5K';
+                    else if (maxDim >= 4000) resolution = '4K';
+                    else if (maxDim >= 3000) resolution = '3K';
+                    else if (maxDim >= 2000) resolution = '2K';
+                    else if (maxDim >= 1000) resolution = '1K';
+                    
+                    if (resolution) {
+                        resolutionBadge = `<div class="resolution-badge">${resolution}</div>`;
+                    }
+                }
+                
+                imgWrapper.innerHTML = `
+                    ${resolutionBadge}
+                    <div class="img-skeleton" data-id="${post.id}"></div>
+                    <img src="${previewUrl}" alt="Search result" class="gallery-img" loading="lazy" style="opacity:0;" data-id="${post.id}" data-full-url="${fullUrl}">
+                `;
+                
+                imageContainer.appendChild(imgWrapper);
+                
+                const img = imgWrapper.querySelector('img');
+                img.addEventListener('load', function() {
+                    this.style.opacity = '1';
+                    const skeleton = imgWrapper.querySelector('.img-skeleton');
+                    if (skeleton) {
+                        skeleton.remove();
+                    }
+                });
+                
+                imgWrapper.addEventListener('click', () => {
+                    window.open(fullUrl, '_blank');
+                });
+            });
+        }
+
+        // Update pagination controls
+        function updatePagination() {
+            pageInfo.textContent = `Page ${currentPage}`;
+            prevPageButton.disabled = currentPage <= 1;
+            nextPageButton.disabled = searchResults.length < 5; // Assumes we show 5 results per page
+            
+            if (currentPage <= 1) {
+                prevPageButton.classList.add('disabled');
+            } else {
+                prevPageButton.classList.remove('disabled');
+            }
+            
+            if (searchResults.length < 5) {
+                nextPageButton.classList.add('disabled');
+            } else {
+                nextPageButton.classList.remove('disabled');
+            }
+        }
+
+        // Event Listeners
+        const debouncedFetchTags = debounce(async function(e) {
+            const lastWord = e.target.value.trim().split(' ').pop();
+            if (lastWord && lastWord.length > 1) {
+                const suggestions = await fetchTags(lastWord);
+                showTagSuggestions(suggestions);
+            } else {
+                tagsContainer.innerHTML = '';
+            }
+        }, 500);
+
+        searchInput.addEventListener('input', debouncedFetchTags);
+
+        searchButton.addEventListener('click', () => {
+            currentPage = 1;
+            performSearch();
+        });
+        
+        prevPageButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                performSearch();
+            }
+        });
+        
+        nextPageButton.addEventListener('click', () => {
+            currentPage++;
+            performSearch();
+        });
+        
+        // Site selector
+        siteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                siteButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                currentSite = this.dataset.site;
+                if (searchInput.value.trim()) {
+                    currentPage = 1;
+                    performSearch();
+                }
+            });
+        });
+
+        // Rating selector
+        ratingButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                ratingButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                currentRating = this.dataset.rating;
+                if (searchInput.value.trim()) {
+                    currentPage = 1;
+                    performSearch();
+                }
+            });
+        });
+        
+        messageCloseButton.addEventListener('click', () => {
+            messageBox.classList.remove('visible');
+        });
+        
+    </script>
+</body>
+</html>
