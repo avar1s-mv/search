@@ -761,7 +761,7 @@
                 }
 
                 // Use a CORS proxy
-                const proxyUrl = `https://search-production-4b5e.up.railway.app:9090/proxy?url=${encodeURIComponent(apiUrl)}`;
+                const proxyUrl = `https://search-production-4b5e.up.railway.app/proxy?url=${encodeURIComponent(apiUrl)}`;
                 const response = await fetch(proxyUrl);
                 
                 if (!response.ok) {
