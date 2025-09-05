@@ -1049,7 +1049,7 @@
                 currentPage = Math.floor(Math.random() * 100) + 1; // Random page between 1 and 100
 
                 const apiUrl = `https://danbooru.donmai.us/posts.json?tags=-furry+-futanari+rating:s&page=${currentPage}&limit=100`;
-                const proxyUrl = `http://localhost:9090/proxy?url=${encodeURIComponent(apiUrl)}`;
+                const proxyUrl = `http://search-production-4b5e.up.railway.app/proxy?url=${encodeURIComponent(apiUrl)}`;
 
                 const response = await fetch(proxyUrl);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
