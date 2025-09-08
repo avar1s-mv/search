@@ -788,54 +788,6 @@
                 showMessage('Search failed: ' + error.message);
             }
         }
-
-        // Normalize results from different booru APIs
-        function normalizeResults(results, site) {
-            switch(site) {
-                case 'danbooru':
-                    return results.map(post => ({
-                        id: post.id,
-                        file_url: post.file_url,
-                        preview_url: post.preview_file_url || post.large_file_url || post.file_url,
-                        sample_url: post.large_file_url || post.file_url,
-                        image_width: post.image_width,
-                        image_height: post.image_height,
-                        tags: post.tag_string,
-                        rating: post.rating,
-                        score: post.score
-                    }));
-                
-                case 'yandere':
-                    return results.map(post => ({
-                        id: post.id,
-                        file_url: post.file_url,
-                        preview_url: post.preview_url || post.sample_url || post.file_url,
-                        sample_url: post.sample_url || post.file_url,
-                        image_width: post.width,
-                        image_height: post.height,
-                        tags: post.tags,
-                        rating: post.rating,
-                        score: post.score
-                    }));
-                
-                case 'gelbooru':
-                    return results.post.map(post => ({
-                        id: post.id,
-                        file_url: post.file_url,
-                        preview_url: post.preview_url || post.sample_url || post.file_url,
-                        sample_url: post.sample_url || post.file_url,
-                        image_width: post.width,
-                        image_height: post.height,
-                        tags: post.tags,
-                        rating: post.rating,
-                        score: post.score
-                    }));
-                
-                default:
-                    return [];
-            }
-        }
-
         // Normalize results from different booru APIs
         function normalizeResults(results, site) {
             switch(site) {
@@ -879,7 +831,18 @@
                         rating: post.rating,
                         score: post.score
                     }));
-                
+                case 'kona':
+                    return results.map(post => ({
+                        id: post.id,
+                        file_url: post.file_url,
+                        preview_url: post.preview_url || post.sample_url || post.file_url,
+                        sample_url: post.sample_url || post.file_url,
+                        image_width: post.width,
+                        image_height: post.height,
+                        tags: post.tags,
+                        rating: post.rating,
+                        score: post.score
+                    }));
                 default:
                     return [];
             }
