@@ -544,21 +544,11 @@
             
             <div id="tagsContainer" class="tags-container"></div>
         </div>
-
-        <!-- API Pagination: controls to request the next/previous API page (fetches new batch of up to 100 results) -->
-        <div class="pagination" id="apiPagination" style="margin-top: 8px;">
-            <button class="page-button disabled" id="prevApi">Prev API</button>
-            <span id="apiPageInfo">API Page 1</span>
-            <button class="page-button disabled" id="nextApi">Next API</button>
-        </div>
-
-        <!-- Web pagination: slices the currently cached API results into pages of 20 -->
-        <div class="pagination" id="pagination" style="margin-top: 8px;">
+        <div class="pagination" id="pagination">
             <button class="page-button disabled" id="prevPage">Previous</button>
             <span id="pageInfo">Page 1 of 1</span>
             <button class="page-button disabled" id="nextPage">Next</button>
         </div>
-
         <div class="container" id="imageContainer"></div>
         
     </div>
@@ -759,10 +749,10 @@
             
             try {
                 const apiEndpoints = {
-                    'danbooru': `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&page=${apiPage}&limit=100`,
-                    'yandere': `https://yande.re/post.json?tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&page=${apiPage}&limit=100`,
-                    'gelbooru': `https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&pid=${Math.max(0, apiPage - 1)}&limit=100&api_key=ed2909b6af0fbf500dc461925cdcd25bc884bc1462a4bf64f8082360b427d8a7cb282d2c54a4183963878136e57536c85a61166e3c379c649681dcb5ab648334&user_id=1806774`,
-                    'kona': `https://konachan.net/post.json?tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&limit=100&page=${apiPage}`
+                    'danbooru': `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&page=${currentPage}&limit=100`,
+                    'yandere': `https://yande.re/post.json?tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&page=${currentPage}&limit=100`,
+                    'gelbooru': `https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&pid=${currentPage - 1}&limit=100&api_key=ed2909b6af0fbf500dc461925cdcd25bc884bc1462a4bf64f8082360b427d8a7cb282d2c54a4183963878136e57536c85a61166e3c379c649681dcb5ab648334&user_id=1806774`,
+                    'kona': `https://konachan.net/post.json?tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&limit=100&page=${currentPage}`
                 };
 
                 const apiUrl = apiEndpoints[currentSite];
@@ -778,17 +768,18 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
-                const rawResults = await response.json();
-
-                // Normalize and sort results
+                let rawResults = await response.json();
+                
+                // Normalize the results from different boorus
                 searchResults = normalizeResults(rawResults, currentSite);
-                searchResults.sort((a, b) => (b.score || 0) - (a.score || 0));
-
-                // Reset web page (slice-level) and compute total pages for the current batch
-                webPage = 1;
-                totalWebPages = Math.max(1, Math.ceil(searchResults.length / itemsPerPage));
-
-                // Render the first web page and update both paginators
+                
+                // Sort by score (highest first) with fallback for posts without score
+                searchResults.sort((a, b) => {
+                    const scoreA = a.score || 0;
+                    const scoreB = b.score || 0;
+                    return scoreB - scoreA; // Descending order (highest first)
+                });
+                
                 renderImages();
                 updatePagination();
             } catch (error) {
@@ -797,7 +788,6 @@
                 showMessage('Search failed: ' + error.message);
             }
         }
-
         // Normalize results from different booru APIs
         function normalizeResults(results, site) {
             switch(site) {
@@ -882,23 +872,22 @@
         function renderImages() {
             imageContainer.innerHTML = '';
             
-            if (!searchResults || searchResults.length === 0) {
+            if (searchResults.length === 0) {
                 imageContainer.innerHTML = '<div class="error">No results found</div>';
                 return;
             }
-
-            const start = (webPage - 1) * itemsPerPage;
-            const pageItems = searchResults.slice(start, start + itemsPerPage);
-
-            pageItems.forEach(post => {
+            
+            searchResults.forEach(post => {
                 const imgWrapper = document.createElement('div');
                 imgWrapper.className = 'img-wrapper';
                 
+                // Use preview_url if available, otherwise fall back to sample_url or file_url
                 const previewUrl = currentSite === "yandere"
-                    ? post.preview_url
-                    : (post.sample_url || post.preview_url || post.file_url);
+                ? post.preview_url
+                : (post.sample_url || post.preview_url || post.file_url);
                 const fullUrl = post.file_url;
 
+                
                 let resolutionBadge = '';
                 if (post.image_width && post.image_height) {
                     const maxDim = Math.max(post.image_width, post.image_height);
@@ -929,7 +918,9 @@
                 img.addEventListener('load', function() {
                     this.style.opacity = '1';
                     const skeleton = imgWrapper.querySelector('.img-skeleton');
-                    if (skeleton) skeleton.remove();
+                    if (skeleton) {
+                        skeleton.remove();
+                    }
                 });
                 
                 imgWrapper.addEventListener('click', () => {
@@ -938,41 +929,26 @@
             });
         }
 
-        // Update both web-level pagination and API-level pagination UI
+        // Update pagination controls
         function updatePagination() {
-            // Web page info
-            pageInfo.textContent = `Page ${webPage} of ${totalWebPages}`;
-            if (webPage <= 1) {
+            pageInfo.textContent = `Page ${currentPage}`;
+            prevPageButton.disabled = currentPage <= 1;
+            nextPageButton.disabled = searchResults.length < 5; // Assumes we show 5 results per page
+            
+            if (currentPage <= 1) {
                 prevPageButton.classList.add('disabled');
-                prevPageButton.disabled = true;
             } else {
                 prevPageButton.classList.remove('disabled');
-                prevPageButton.disabled = false;
             }
-
-            if (webPage >= totalWebPages) {
+            
+            if (searchResults.length < 5) {
                 nextPageButton.classList.add('disabled');
-                nextPageButton.disabled = true;
             } else {
                 nextPageButton.classList.remove('disabled');
-                nextPageButton.disabled = false;
             }
-
-            // API page info (we don't know max API pages reliably, so allow navigation freely but prevent going below 1)
-            apiPageInfo.textContent = `API Page ${apiPage}`;
-            if (apiPage <= 1) {
-                prevApiButton.classList.add('disabled');
-                prevApiButton.disabled = true;
-            } else {
-                prevApiButton.classList.remove('disabled');
-                prevApiButton.disabled = false;
-            }
-            // Always enable nextApi (user may request next batch). If you want to limit, add maxApiPage logic.
-            nextApiButton.classList.remove('disabled');
-            nextApiButton.disabled = false;
         }
 
-        // Event Listeners (adjusted to new behavior)
+        // Event Listeners
         const debouncedFetchTags = debounce(async function(e) {
             const lastWord = e.target.value.trim().split(' ').pop();
             if (lastWord && lastWord.length > 1) {
@@ -986,40 +962,20 @@
         searchInput.addEventListener('input', debouncedFetchTags);
 
         searchButton.addEventListener('click', () => {
-            apiPage = 1;   // when user performs a new search, reset API page
-            webPage = 1;
+            currentPage = 1;
             performSearch();
         });
         
         prevPageButton.addEventListener('click', () => {
-            if (webPage > 1) {
-                webPage--;
-                renderImages(); // no new API request, just show previous slice
-                updatePagination();
+            if (currentPage > 1) {
+                currentPage--;
+                performSearch();
             }
         });
         
         nextPageButton.addEventListener('click', () => {
-            if (webPage < totalWebPages) {
-                webPage++;
-                renderImages(); // show next slice from cached results
-                updatePagination();
-            }
-        });
-
-        // API navigation: fetch same tags but different apiPage and reset webPage to 1
-        prevApiButton.addEventListener('click', () => {
-            if (apiPage > 1) {
-                apiPage--;
-                webPage = 1;
-                performSearch(); // perform a fresh API request with new apiPage
-            }
-        });
-
-        nextApiButton.addEventListener('click', () => {
-            apiPage++;
-            webPage = 1;
-            performSearch(); // perform a fresh API request with new apiPage
+            currentPage++;
+            performSearch();
         });
         
         // Site selector
@@ -1028,9 +984,8 @@
                 siteButtons.forEach(btn => btn.classList.remove('active'));
                 this.classList.add('active');
                 currentSite = this.dataset.site;
-                apiPage = 1; // reset API page on site change
-                webPage = 1;
                 if (searchInput.value.trim()) {
+                    currentPage = 1;
                     performSearch();
                 }
             });
@@ -1042,32 +997,34 @@
                 ratingButtons.forEach(btn => btn.classList.remove('active'));
                 this.classList.add('active');
                 currentRating = this.dataset.rating;
-                apiPage = 1; // reset API page when rating changes
-                webPage = 1;
                 if (searchInput.value.trim()) {
+                    currentPage = 1;
                     performSearch();
                 }
             });
         });
         
-        // Adjusted initial Danbooru load to use apiPage and webPage model
+        messageCloseButton.addEventListener('click', () => {
+            messageBox.classList.remove('visible');
+        });
+        
+        // New: fetch Danbooru posts with only the rating tag (runs on page load)
         async function loadReq() {
             try {
+                // Ensure we query Danbooru and randomize the page number
                 currentSite = 'danbooru';
-                apiPage = Math.floor(Math.random() * 100) + 1; // random API page
-                webPage = 1;
+                currentPage = Math.floor(Math.random() * 100) + 1; // Random page between 1 and 100
 
-                const apiUrl = `https://danbooru.donmai.us/posts.json?tags=-furry+-futanari+rating:s&page=${apiPage}&limit=100`;
+                const apiUrl = `https://danbooru.donmai.us/posts.json?tags=-furry+-futanari+rating:s&page=${currentPage}&limit=100`;
                 const proxyUrl = `https://api-olive-gamma.vercel.app/api/proxy?url=${encodeURIComponent(apiUrl)}`;
 
                 const response = await fetch(proxyUrl);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const rawResults = await response.json();
 
+                // Normalize, sort and render like the regular flow
                 searchResults = normalizeResults(rawResults, 'danbooru');
                 searchResults.sort((a, b) => (b.score || 0) - (a.score || 0));
-                totalWebPages = Math.max(1, Math.ceil(searchResults.length / itemsPerPage));
-
                 renderImages();
                 updatePagination();
             } catch (error) {
