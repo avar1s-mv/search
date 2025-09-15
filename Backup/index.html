@@ -751,7 +751,7 @@
                 const apiEndpoints = {
                     'danbooru': `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&page=${currentPage}&limit=100`,
                     'yandere': `https://yande.re/post.json?tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&page=${currentPage}&limit=100`,
-                    'gelbooru': `https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&pid=${currentPage - 1}&limit=100&api_key=ed2909b6af0fbf500dc461925cdcd25bc884bc1462a4bf64f8082360b427d8a7cb282d2c54a4183963878136e57536c85a61166e3c379c649681dcb5ab648334&user_id=1806774`,
+                    'gelbooru': `https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&pid=${currentPage - 1}&limit=100`,
                     'kona': `https://konachan.net/post.json?tags=${encodeURIComponent([...tags, `rating:${currentRating}`].join(' '))}&limit=100&page=${currentPage}`
                 };
 
