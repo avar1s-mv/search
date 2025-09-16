@@ -544,9 +544,10 @@
             
             <div id="tagsContainer" class="tags-container"></div>
         </div>
+        <span id ="pageInfoa">Page 1 of 1</span>
         <div class="pagination" id="pagination">
             <button class="page-button disabled" id="prevPage">Previous</button>
-            <span id="pageInfo">Page 1 of 1</span>
+            <span id="pageInfob">Page 1 of 1</span>
             <button class="page-button disabled" id="nextPage">Next</button>
         </div>
         <div class="container" id="imageContainer"></div>
@@ -645,7 +646,8 @@
         const imageContainer = document.getElementById('imageContainer');
         const prevPageButton = document.getElementById('prevPage');
         const nextPageButton = document.getElementById('nextPage');
-        const pageInfo = document.getElementById('pageInfo');
+        const pageInfoa = document.getElementById('pageInfoa');
+        const pageInfob = document.getElementById('pageInfob');
         const siteButtons = document.querySelectorAll('.site-button');
         const ratingButtons = document.querySelectorAll('.rating-button');
         const messageBox = document.getElementById('messageBox');
@@ -931,7 +933,9 @@
         // Update pagination info
         function updatePagination() {
             const totalWebPages = Math.ceil(searchResults.length / resultsPerPage) || 1;
-            pageInfo.textContent = `API Page ${apiPage}, Web Page ${webPage} of ${totalWebPages}`;
+            pageInfoa.textContent = `API Page ${apiPage}`;
+            pageInfob.textContent = `Web Page ${webPage} of ${totalWebPages}`;
+
 
             prevPageButton.disabled = (webPage <= 1 && apiPage <= 1);
             nextPageButton.disabled = (webPage >= totalWebPages && searchResults.length < 100);
