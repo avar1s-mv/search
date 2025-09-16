@@ -506,10 +506,41 @@
             width: 30px; /* Smaller size */
             height: 30px;
         }
+        #background-changer {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 10000;
+    display: flex;
+    gap: 10px;
+}
+
+#background-changer button {
+    background: var(--theme-bg-1);
+    backdrop-filter: blur(8px);
+    border: none;
+    border-radius: 14px;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #e3e8f0;
+    cursor: pointer;
+    box-shadow: 0 2px 12px #0003;
+    transition: all 0.3s ease;
+}
+
+#background-changer button:hover {
+    background: rgba(40, 50, 90, 0.7);
+}
     </style>
 </head>
 <body>
     <div id="wallpaper-overlay"></div>
+    <div id="background-changer">
+        <button id="prev-background">&lt;</button>
+        <button id="next-background">&gt;</button>
+    </div>
+    <div id="background-filename" style="text-align: center; color: var(--theme-text); margin-top: 5px; font-size: 14px;"></div>
     <div id="theme-switcher">
         <button id="theme-toggle">Theme ▼</button>
         <div id="theme-options">
@@ -567,7 +598,7 @@
         // Background images and theme switching (preserved from your code)
         const backgroundImages = [];
 
-        const max = 11;
+        const max =15;
         const letters = ['', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
         for (let i = 0; i < max; i++) {
@@ -1062,6 +1093,43 @@
                 console.error('Danbooru initial fetch failed:', error);
             }
         }
+
+        let currentBackgroundIndex = 0;
+
+        function changeBackground(direction) {
+            if (direction === 'next') {
+                currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
+            } else if (direction === 'prev') {
+                currentBackgroundIndex = (currentBackgroundIndex - 1 + backgroundImages.length) % backgroundImages.length;
+            }
+
+            const newBackground = backgroundImages[currentBackgroundIndex];
+            localStorage.setItem('lastBackground', newBackground);
+
+            const overlay = document.getElementById('wallpaper-overlay');
+            overlay.style.backgroundImage = `url('${newBackground}')`;
+            overlay.style.animation = 'zoomIn 1.5s cubic-bezier(0.2, 0.8, 0.4, 1), fadeOut 1s ease-in-out 1.3s forwards';
+
+            document.body.style.backgroundImage = `
+                linear-gradient(135deg, rgba(10,20,40,0.5) 0%, rgba(26,35,126,0.5) 100%),
+                url('${newBackground}')
+            `;
+
+            // Update the background file name
+            const backgroundFilename = newBackground.split('/').pop(); // Extract the file name
+            document.getElementById('background-filename').textContent = `Background: ${backgroundFilename}`;
+        }
+
+        // Event listeners for the buttons
+        document.getElementById('prev-background').addEventListener('click', () => changeBackground('prev'));
+        document.getElementById('next-background').addEventListener('click', () => changeBackground('next'));
+
+        // Initialize the file name on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialBackground = backgroundImages[currentBackgroundIndex];
+            const initialFilename = initialBackground.split('/').pop();
+            document.getElementById('background-filename').textContent = `Background: ${initialFilename}`;
+        });
     </script>
 </body>
 </html>
