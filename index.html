@@ -880,12 +880,12 @@
         // Render images in the container
         function renderImages() {
             imageContainer.innerHTML = '';
-            
+
             if (searchResults.length === 0) {
                 imageContainer.innerHTML = '<div class="error">No results found</div>';
                 return;
             }
-            
+
             const start = (webPage - 1) * resultsPerPage;
             const end = start + resultsPerPage;
             const slice = searchResults.slice(start, end);
@@ -893,14 +893,23 @@
             slice.forEach(post => {
                 const imgWrapper = document.createElement('div');
                 imgWrapper.className = 'img-wrapper';
-                
-                // Use preview_url if available, otherwise fall back to sample_url or file_url
-                const previewUrl = currentSite === "yandere"
-                ? post.preview_url
-                : (post.sample_url || post.preview_url || post.file_url);
+
+                // Determine the preview URL based on file type and site
+                let previewUrl = '';
+                if (post.file_url.endsWith('.mp4')) {
+                    if (currentSite === 'gelbooru') {
+                        previewUrl = post.preview_url; // Use preview_url for Gelbooru
+                    } else if (currentSite === 'danbooru') {
+                        previewUrl = post.preview_file_url; // Use preview_file_url for Danbooru
+                    }
+                } else {
+                    previewUrl = currentSite === "yandere"
+                        ? post.preview_url
+                        : (post.sample_url || post.preview_url || post.file_url);
+                }
+
                 const fullUrl = post.file_url;
 
-                
                 let resolutionBadge = '';
                 if (post.image_width && post.image_height) {
                     const maxDim = Math.max(post.image_width, post.image_height);
@@ -913,21 +922,21 @@
                     else if (maxDim >= 1000) resolutionBadge = '1K';
                     if (resolutionBadge) resolutionBadge = `<div class="resolution-badge">${resolutionBadge}</div>`;
                 }
-                
+
                 imgWrapper.innerHTML = `
                     ${resolutionBadge}
                     <div class="img-skeleton" data-id="${post.id}"></div>
                     <img src="${previewUrl}" alt="Search result" class="gallery-img" loading="lazy" style="opacity:0;" data-id="${post.id}" data-full-url="${fullUrl}">
                 `;
-                
+
                 imageContainer.appendChild(imgWrapper);
-                
+
                 const img = imgWrapper.querySelector('img');
                 img.addEventListener('load', function() {
                     this.style.opacity = '1';
                     imgWrapper.querySelector('.img-skeleton')?.remove();
                 });
-                
+
                 imgWrapper.addEventListener('click', () => {
                     window.open(fullUrl, '_blank');
                 });
