@@ -233,10 +233,20 @@
         }
 
         .pagination {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
             justify-content: center;
             gap: 10px;
-            margin-top: 20px;
+            z-index: 1000;
+            background: var(--theme-card);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+            align-items: center;
         }
 
         .page-button {
@@ -532,6 +542,11 @@
 #background-changer button:hover {
     background: rgba(40, 50, 90, 0.7);
 }
+#pageInfob {
+    font-size: 12px; /* Adjust the size as needed */
+    font-weight: bold; /* Optional: Make it bold */
+    color: var(--theme-text); /* Optional: Ensure it matches the theme */
+}
     </style>
 </head>
 <body>
@@ -577,16 +592,11 @@
         </div>
         <span id ="pageInfoa">Page 1 of 1</span>
         <div class="pagination" id="pagination">
-            <button class="page-button disabled" id="prevPage">Previous</button>
+            <button class="page-button disabled" id="prevPage">&lt;</button>
             <span id="pageInfob">Page 1 of 1</span>
-            <button class="page-button disabled" id="nextPage">Next</button>
+            <button class="page-button disabled" id="nextPage">&gt;</button>
         </div>
         <div class="container" id="imageContainer"></div>
-        <div class="pagination" id="pagination">
-            <button class="page-button disabled" id="prevPage">Previous</button>
-            <span id="pageInfob">Page 1 of 1</span>
-            <button class="page-button disabled" id="nextPage">Next</button>
-        </div>
     </div>
 
     <!-- Custom message box -->
@@ -978,7 +988,7 @@
         function updatePagination() {
             const totalWebPages = Math.ceil(searchResults.length / resultsPerPage) || 1;
             pageInfoa.textContent = `API Page ${apiPage}`;
-            pageInfob.textContent = `Web Page ${webPage} of ${totalWebPages}`;
+            pageInfob.textContent = `${webPage} of ${totalWebPages}`;
 
 
             prevPageButton.disabled = (webPage <= 1 && apiPage <= 1);
