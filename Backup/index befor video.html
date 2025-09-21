@@ -42,7 +42,7 @@
             margin: 30px auto 0;
             padding: 24px;
             background: var(--theme-card);
-            /*backdrop-filter: blur(10px);*/
+            backdrop-filter: blur(10px);
             border-radius: 16px;
         }
 
@@ -82,7 +82,7 @@
             font-weight: bold;
             z-index: 4;
             pointer-events: none;
-            /*backdrop-filter: blur(5px);*/
+            backdrop-filter: blur(5px);
             transition: transform .30s cubic-bezier(.4,2,.6,1), opacity .30s cubic-bezier(.4,2,.6,1);
             opacity: 1;
             transform: scale(1);
@@ -121,7 +121,7 @@
             max-width: 800px;
             margin: 20px auto;
             background: var(--theme-card);
-            /*backdrop-filter: blur(10px);*/
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 20px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.2);
@@ -242,7 +242,7 @@
             gap: 10px;
             z-index: 1000;
             background: var(--theme-card);
-        /*    backdrop-filter: blur(10px);*/
+            backdrop-filter: blur(10px);
             padding: 10px 20px;
             border-radius: 12px;
             box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
@@ -283,7 +283,7 @@
 
         #theme-toggle {
             background: var(--theme-bg-1);
-            /*backdrop-filter: blur(8px);*/
+            backdrop-filter: blur(8px);
             border: none;
             border-radius: 14px;
             padding: 10px 20px;
@@ -305,7 +305,7 @@
             top: 100%;
             left: 0;
             background: var(--theme-bg-2);
-            /*backdrop-filter: blur(12px);*/
+            backdrop-filter: blur(12px);
             border-radius: 14px;
             padding: 10px 0;
             margin-top: 8px;
@@ -466,7 +466,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: var(--theme-card);
-            /*backdrop-filter: blur(10px);*/
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 20px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.2);
@@ -527,7 +527,7 @@
 
 #background-changer button {
     background: var(--theme-bg-1);
-/*    backdrop-filter: blur(8px);*/
+    backdrop-filter: blur(8px);
     border: none;
     border-radius: 14px;
     padding: 10px 20px;
@@ -547,26 +547,9 @@
     font-weight: bold; /* Optional: Make it bold */
     color: var(--theme-text); /* Optional: Ensure it matches the theme */
 }
-.image-tooltip {
-  position: fixed;
-  pointer-events: none;
-  background: rgba(20,30,60,0.96);
-  color: #e3e8f0;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  max-width: 360px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  z-index: 999999;
-  box-shadow: 0 6px 22px rgba(0,0,0,0.45);
-  display: none;
-}
-
     </style>
 </head>
 <body>
-    <div id="imageTooltip" class="image-tooltip"></div>
     <div id="wallpaper-overlay"></div>
     <div id="background-changer">
         <button id="prev-background">&lt;</button>
@@ -985,16 +968,8 @@
                 imgWrapper.innerHTML = `
                     ${resolutionBadge}
                     <div class="img-skeleton" data-id="${post.id}"></div>
-                    <img src="${previewUrl}" 
-                        alt="Search result" 
-                        class="gallery-img" 
-                        loading="lazy" 
-                        style="opacity:0;" 
-                        data-id="${post.id}" 
-                        data-full-url="${fullUrl}"
-                        data-tags="${post.tags}">
+                    <img src="${previewUrl}" alt="Search result" class="gallery-img" loading="lazy" style="opacity:0;" data-id="${post.id}" data-full-url="${fullUrl}">
                 `;
-
 
                 imageContainer.appendChild(imgWrapper);
 
@@ -1003,24 +978,6 @@
                     this.style.opacity = '1';
                     imgWrapper.querySelector('.img-skeleton')?.remove();
                 });
-                const tooltip = document.getElementById('imageTooltip');
-
-                imageContainer.querySelectorAll('.gallery-img').forEach(img => {
-                    img.addEventListener('mouseenter', e => {
-                        tooltip.textContent = img.dataset.tags || "No tags";
-                        tooltip.style.display = 'block';
-                    });
-
-                    img.addEventListener('mousemove', e => {
-                        tooltip.style.left = (e.pageX + 15) + 'px';
-                        tooltip.style.top = (e.pageY + 15) + 'px';
-                    });
-
-                    img.addEventListener('mouseleave', () => {
-                        tooltip.style.display = 'none';
-                    });
-                });
-
 
                 imgWrapper.addEventListener('click', () => {
                     window.open(fullUrl, '_blank');
