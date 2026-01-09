@@ -447,10 +447,19 @@
             .main-wrapper {
                 flex-direction: column;   /* stack vertically */
                 align-items: stretch;
-                padding: 10px;
+                padding: 0px;
             }
             .img-wrapper {
                 margin-bottom: 2px;
+                padding: 0;
+            }
+            .resolution-badge {
+                font-size: 10px;
+                padding: 5px 7px;
+            }
+            .image-tooltip{
+                font-size: 7px;
+                max-width: 150px;
             }
             .side {
                 width: 100%;              /* sidebar full width */
@@ -476,15 +485,28 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 18px;
+                gap: 1px;
                 margin-top: 30px;
                 margin-bottom: 10px;
                 flex-wrap: wrap; /* Add this to allow wrapping */
                 width: 100%; /* Ensure it takes full width */
             }
+            .site-selector{
+                gap:1px;
+            }
+            .site-button{
+                max-width: 0px;
+            }
+            .pagination{
+                width: 80%;
+                justify-content: space-between;
+            }
             .switch {
                 width: 50px;
                 height: 28px;
+            }
+            .easter{
+                width: 50px;
             }
         }
 
@@ -695,14 +717,14 @@
 }
 .easter{
     position: fixed;
-    width: 300px;
+    width: 50px;
     /* height: 250px; */
     border-radius: 50%;
     object-fit: contain;
     vertical-align: middle;
     z-index: 999;
-    bottom: -150px;
-    right: -150px;
+    bottom: -5px;
+    right: -5px;
 }
 .easter img{
     width: 100%;
@@ -1236,7 +1258,7 @@
                                                     color: #e3e8f0;
                                                     padding: 3px 6px;
                                                     border-radius: 4px;
-                                                    font-size: 11px;
+                                                    font-size: inherit;
                                                     border: 1px solid rgba(255, 255, 255, 0.1);">
                                             ${tag}
                                         </span>`
