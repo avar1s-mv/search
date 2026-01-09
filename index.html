@@ -6,6 +6,7 @@
     <title>Image Search Gallery</title>
     <link rel="icon" type="image/x-icon" href="/asset/favicon.ico">
     <style>
+        /* Reset and base styles */
         body {
             font-family: Arial Black, Arial, Helvetica, sans-serif;
             color: #e3e8f0;
@@ -443,6 +444,27 @@
                 margin: 5px auto 0;
                 column-gap: 5px;
             }
+            .main-wrapper {
+                flex-direction: column;   /* stack vertically */
+                align-items: stretch;
+                padding: 10px;
+            }
+            .img-wrapper {
+                margin-bottom: 2px;
+            }
+            .side {
+                width: 100%;              /* sidebar full width */
+                position: relative;       /* remove sticky on mobile */
+                top: unset;
+                margin-bottom: 15px;      /* spacing before gallery */
+            }
+
+            .sider {
+                width: 100%;
+                margin-left: 0;
+                max-width: 100%;
+            }
+
             .gallery-img {
                 margin-bottom: 5px;
             }
