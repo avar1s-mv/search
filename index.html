@@ -1,1459 +1,1702 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Image Search Gallery</title>
-    <link rel="icon" type="image/x-icon" href="/asset/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="/asset/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css"
+    />
     <style>
-        /* Reset and base styles */
-        body {
-            font-family: Arial Black, Arial, Helvetica, sans-serif;
-            color: #e3e8f0;
-            font-weight: bold;
-            margin: 0;
-            background: 
-                linear-gradient(135deg, var(--theme-bg-1) 25%, var(--theme-bg-2) 100%),
-                url('') center/cover no-repeat fixed;
-            color: var(--theme-text);
-        }
+      /* ─── CSS Variables / Themes ─── */
+      :root {
+        --bg-1: rgba(8, 14, 30, 0.72);
+        --bg-2: rgba(18, 28, 70, 0.62);
+        --text: #dde3f5;
+        --text-muted: #8898c0;
+        --card: rgba(14, 22, 50, 0.55);
+        --accent: #3b5bdb;
+        --accent-glow: rgba(59, 91, 219, 0.35);
+        --border: rgba(100, 130, 220, 0.18);
+        --sidebar-w: 300px;
+        --gap: 10px;
+        --radius: 14px;
+        --font-display: "Syne", sans-serif;
+        --font-body: "DM Sans", sans-serif;
+      }
+      .theme-deep-purple {
+        --bg-1: rgba(20, 6, 40, 0.72);
+        --bg-2: rgba(60, 10, 80, 0.55);
+        --text: #f0e6ff;
+        --text-muted: #a070c0;
+        --card: rgba(35, 10, 55, 0.55);
+        --accent: #9c4dcc;
+        --accent-glow: rgba(156, 77, 204, 0.35);
+        --border: rgba(180, 100, 240, 0.18);
+      }
+      .theme-emerald {
+        --bg-1: rgba(6, 28, 14, 0.72);
+        --bg-2: rgba(10, 55, 28, 0.55);
+        --text: #e0f5e8;
+        --text-muted: #60a878;
+        --card: rgba(10, 40, 20, 0.55);
+        --accent: #2e7d52;
+        --accent-glow: rgba(46, 125, 82, 0.35);
+        --border: rgba(80, 200, 120, 0.18);
+      }
+      .theme-crimson {
+        --bg-1: rgba(30, 6, 6, 0.72);
+        --bg-2: rgba(70, 12, 12, 0.55);
+        --text: #ffe6e6;
+        --text-muted: #c07070;
+        --card: rgba(45, 10, 10, 0.55);
+        --accent: #c0392b;
+        --accent-glow: rgba(192, 57, 43, 0.35);
+        --border: rgba(220, 80, 80, 0.18);
+      }
 
-        .main-wrapper {
-            display: flex;
-            flex-direction: row;
-            align-items: top;
-            justify-content: space-evenly;
-            max-width: 100vw;
-            padding: 20px;
-        }
-        .side {
-            position : sticky;
-            top: 0;
-            align-self: flex-start;
-            height: fit-content;
-            width: 280px;
-        }
-        .sider {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;              /* let it fill remaining space */
-            max-width: 70%;       /* make it smaller overall */
-            margin-left: 20px;    /* add space between sidebar and main content */
-        }
-        h1 {
-            text-align: center;
-            color: #e3e8f0;
-            font-size: 25px;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 16px #000a, 0 0 2px #1a237e;
-        }
+      /* ─── Reset ─── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-        .container {
-            column-count: 5;              /* Number of columns (adjust for screen size) */
-            column-gap: 10px;             /* Space between columns */
-            width: 100%;
-            max-width: 100%;
-            margin: 30px auto 0;
-            padding: 24px;
-            background: var(--theme-card);
-            /*backdrop-filter: blur(10px);*/
-            border-radius: 16px;
-        }
+      body {
+        font-family: var(--font-body);
+        color: var(--text);
+        background:
+          linear-gradient(135deg, var(--bg-1) 20%, var(--bg-2) 100%),
+          url("") center/cover no-repeat fixed;
+        background-color: #08101e;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
 
-        .img-wrapper {
-            break-inside: avoid;       /* Masonry fix */
-            margin-bottom: 20px;
-            position: relative;        /* Needed for absolute children */
-            display: inline-block;     /* Ensure it respects column flow */
-            width: 100%;               /* Make images stretch in column */
-            transition: transform 0.4s cubic-bezier(0.333,0.008,0,1), box-shadow 0.7s ease;
-        }
-
-        .gallery-img {
-            width: 100%;
-            height: auto;
-            display: block;
-            border-radius: 15px;
-            box-shadow: 0 2px 16px #000a;
-            z-index: 2;
-            background: var(--theme-bg-1);
-            transition: transform 0.4s cubic-bezier(0.333,0.008,0,1), box-shadow 0.7s ease;
-        }
-
-        .img-wrapper:hover {
-            transform: scale(1.05) translateY(-10px);
-            box-shadow: 0 4px 32px #1a237e99;
-            z-index: 99;
-        }
-
-        .resolution-badge {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            background: rgba(20, 30, 60, 0.452);
-            color: #e3e8f0;
-            padding: 5px 10px;
-            border-radius: 7.5px;
-            font-size: 15px;
-            font-weight: bold;
-            z-index: 4;
-            pointer-events: none;
-            /*backdrop-filter: blur(5px);*/
-            transition: transform .30s cubic-bezier(.4,2,.6,1), opacity .30s cubic-bezier(.4,2,.6,1);
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        .img-skeleton {
-            width: 100%;
-            aspect-ratio: 3 / 4;
-            background: #1a1f2e1a;
-            position: relative;
-            overflow: hidden;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            break-inside: avoid;
-            box-shadow: 0 2px 16px #000a;
-        }
-
-        .img-skeleton::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image: linear-gradient(45deg, transparent 25%, rgba(83, 103, 175, 0.5) 50%, transparent 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            pointer-events: none;
-            border-radius: inherit;
-        }
-
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        .search-container {
-            
-            width: 100%;
-            max-width: 800px;
-            margin: 20px auto;
-            background: var(--theme-card);
-            /*backdrop-filter: blur(10px);*/
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-            box-sizing: border-box; 
-        }
-
-        .search-box {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 15px;
-            width: 100%;
-        }
-        .search-box-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            width: 100%;
-        }
-
-        .search-input {
-            flex: 1;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 1px solid var(--theme-accent);
-            background: var(--theme-bg-2);
-            color: var(--theme-text);
-            font-size: 16px;
-            outline: none;
-        }
-
-        .search-button {
-            padding: 12px 24px;
-            border-radius: 12px;
-            border: none;
-            background: var(--theme-accent);
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .search-button.wide {
-            flex: 3; /* makes it wider than refresh */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #refreshButton {
-            flex: 1; /* narrower than search */
-            background-color: var(--theme-bg-2);
-            border: 1px var(--theme-accent);
-            outline: none;
-        }
-
-        .search-icon {
-            width: 12px;
-            height: 12px; /* make the black icon white */
-        }
-
-        .search-button:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-
-        .search-button:active {
-            transform: translateY(0);
-        }
-
-        .tags-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 15px;
-        }
-
-        .tag {
-            padding: 6px 12px;
-            background: var(--theme-bg-2);
-            color: var(--theme-text);
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .tag:hover {
-            background: var(--theme-accent);
-            color: white;
-        }
-
-        .tag.selected {
-            background: var(--theme-accent);
-            color: white;
-        }
-
-        .filter-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
-
-        .explicit-label, .moderate-label, .safe-label {
-            font-size: 22px;
-            vertical-align: middle;
-            margin-left: 4px;
-            color: #e3e8f0;
-            font-weight: bold;
-            letter-spacing: 1px;
-            user-select: none;
-            text-shadow: 0 1px 4px #000a;
-        }
-        
-        .rating-button {
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: none;
-            background: var(--theme-bg-2);
-            color: var(--theme-text);
-            cursor: pointer;
-            transition: all 0.2s;
-            flex: 1; /* Make buttons flexible */
-            min-width: 80px; /* Minimum width */
-            max-width: 100%; /* Maximum width */
-            text-align: center; /* Center the text */
-            white-space: nowrap; /* Prevent text wrapping */
-            box-shadow: inset 0 0 0 transparent; /* default: no glow */
-        }
-        
-        .rating-button:hover {
-            background: var(--theme-accent);
-        }
-        .rating-button[data-rating="g"] {
-        box-shadow: inset 0 0 2px #00ffcc; /* General → cyan glow */
-        }
-
-        .rating-button[data-rating="s"] {
-        box-shadow: inset 0 0 2px #00ff66; /* Safe → green glow */
-        }
-
-        .rating-button[data-rating="q"] {
-        box-shadow: inset 0 0 2px #ffcc00; /* Questionable → yellow glow */
-        }
-
-        .rating-button[data-rating="e"] {
-        box-shadow: inset 0 0 2px #ff3366; /* Explicit → red glow */
-        }
-
-        .rating-button[data-rating="all"] {
-        box-shadow: inset 0 0 2px #3399ff; /* All → blue glow */
-        }
-
-        /* Optional: lebih kuat kalau tombol aktif */
-        .rating-button.active {
-            background: var(--theme-accent);
-        box-shadow: inset 0 0 4px 1px currentColor; 
-        }
-
-        .pagination {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            z-index: 1000;
-            background: var(--theme-card);
-        /*    backdrop-filter: blur(10px);*/
-            padding: 10px 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
-            align-items: center;
-        }
-
-        .page-button {
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: none;
-            background: var(--theme-bg-2);
-            color: var(--theme-text);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .page-button.active {
-            background: var(--theme-accent);
-            color: white;
-        }
-
-        .page-button:hover:not(.disabled) {
-            background: var(--theme-accent);
-            color: white;
-        }
-
-        .page-button.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        #theme-switcher {
-            position: fixed;
-            top: 18px;
-            left: 18px;
-            z-index: 10000;
-        }
-
-        #theme-toggle {
-            background: var(--theme-bg-1);
-            /*backdrop-filter: blur(8px);*/
-            border: none;
-            border-radius: 14px;
-            padding: 10px 20px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #e3e8f0;
-            cursor: pointer;
-            box-shadow: 0 2px 12px #0003;
-            transition: all 0.3s ease;
-        }
-
-        #theme-toggle:hover {
-            background: rgba(40, 50, 90, 0.7);
-        }
-
-        #theme-options {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background: var(--theme-bg-2);
-            /*backdrop-filter: blur(12px);*/
-            border-radius: 14px;
-            padding: 10px 0;
-            margin-top: 8px;
-            box-shadow: 0 4px 24px #0006;
-            min-width: 180px;
-            overflow: hidden;
-        }
-
-        #theme-options div {
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        #theme-options div:hover {
-            background: var(--theme-accent);
-        }
-
-        #theme-switcher:hover #theme-options {
-            display: block;
-        }
-
-        /* Default Theme */
-        :root {
-            --theme-bg-1: rgba(10,20,40,0.5);
-            --theme-bg-2: rgba(26,35,126,0.5);
-            --theme-text: #e3e8f0;
-            --theme-card: rgba(20, 30, 60, 0.253);
-            --theme-accent: #3949ab;
-        }
-
-        /* Deep Purple Theme */
-        .theme-deep-purple {
-            --theme-bg-1: rgba(30, 0, 50, 0.6);
-            --theme-bg-2: rgba(80, 0, 100, 0.5);
-            --theme-text: #f0e6ff;
-            --theme-card: rgba(40, 20, 60, 0.3);
-            --theme-accent: #7e57c2;
-        }
-
-        /* Emerald Night Theme */
-        .theme-emerald {
-            --theme-bg-1: rgba(10, 40, 20, 0.5);
-            --theme-bg-2: rgba(15, 80, 40, 0.5);
-            --theme-text: #e3f7e8;
-            --theme-card: rgba(20, 60, 30, 0.3);
-            --theme-accent: #2e7d32;
-        }
-
-        /* Crimson Dusk Theme */
-        .theme-crimson {
-            --theme-bg-1: rgba(50, 10, 10, 0.5);
-            --theme-bg-2: rgba(100, 20, 20, 0.5);
-            --theme-text: #ffe6e6;
-            --theme-card: rgba(60, 20, 20, 0.3);
-            --theme-accent: #c62828;
-        }
-
-        @media (max-width: 720px) {
-            body {
-                padding: 5px;
-            }
-            .container {
-                column-count: 2;
-                padding: 5px;
-                margin: 5px auto 0;
-                column-gap: 5px;
-            }
-            .main-wrapper {
-                flex-direction: column;   /* stack vertically */
-                align-items: stretch;
-                padding: 0px;
-            }
-            .img-wrapper {
-                margin-bottom: 2px;
-                padding: 0;
-            }
-            .resolution-badge {
-                font-size: 10px;
-                padding: 5px 7px;
-            }
-            .image-tooltip{
-                font-size: 7px;
-                max-width: 150px;
-            }
-            .side {
-                width: 100%;              /* sidebar full width */
-                position: relative;       /* remove sticky on mobile */
-                top: unset;
-                margin-bottom: 15px;      /* spacing before gallery */
-            }
-
-            .sider {
-                width: 100%;
-                margin-left: 0;
-                max-width: 100%;
-            }
-
-            .gallery-img {
-                margin-bottom: 5px;
-            }
-            h1 {
-                font-size: 28px;
-                margin-bottom: 5px;
-            }
-            .filter-row {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 1px;
-                margin-top: 30px;
-                margin-bottom: 10px;
-                flex-wrap: wrap; /* Add this to allow wrapping */
-                width: 100%; /* Ensure it takes full width */
-            }
-            .site-selector{
-                gap:1px;
-            }
-            .site-button{
-                max-width: 0px;
-            }
-            .pagination{
-                width: 80%;
-                justify-content: space-between;
-            }
-            .switch {
-                width: 50px;
-                height: 28px;
-            }
-            .easter{
-                width: 50px;
-            }
-        }
-
-        @media (min-width: 1000px) and (max-width: 2000px) {
-            .container { 
-                column-count: 3;
-            }
-        }
-        @media (min-width: 2000px) and (max-width: 2500px) {
-            .container { column-count: 4; }
-        }
-        @media (min-width: 2500px) {
-            .container { column-count: 5; }
-        }
-
-        /* Site selector */
-        .site-selector {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap; /* Add this to allow wrapping */
-            width: 100%; /* Ensure it takes full width */
-        }
-
-        .site-button {
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: none;
-            background: var(--theme-bg-2);
-            color: var(--theme-text);
-            cursor: pointer;
-            transition: all 0.2s;
-            flex: 1; /* Make buttons flexible */
-            min-width: 80px; /* Minimum width for each button */
-            max-width: 120px; /* Maximum width to prevent over-stretching */
-            text-align: center; /* Center the text */
-            white-space: nowrap; /* Prevent text wrapping */
-        }
-
-        .site-button.active {
-            background: var(--theme-accent);
-            color: white;
-        }
-
-        .site-button:hover {
-            background: var(--theme-accent);
-            color: white;
-        }
-        #wallpaper-overlay {
+      /* ─── Wallpaper overlay ─── */
+      #wallpaper-overlay {
         position: fixed;
-        width: 100%;
-        height: 100%;
+        inset: 0;
         background-size: cover;
         background-position: center;
         z-index: 19999;
-        animation: 
-            zoomIn 1.5s cubic-bezier(0.2, 0.8, 0.4, 1),
-            fadeOut 1s ease-in-out 1.3s forwards;
+        pointer-events: none;
+        animation:
+          zoomIn 1.5s cubic-bezier(0.2, 0.8, 0.4, 1),
+          fadeOut 1s ease-in-out 1.3s forwards;
+      }
+      @keyframes zoomIn {
+        from {
+          transform: scale(1.12);
         }
-        @keyframes zoomIn {
-            from { transform: scale(1.2); }
-            to { transform: scale(1); }
+        to {
+          transform: scale(1);
         }
+      }
+      @keyframes fadeOut {
+        to {
+          opacity: 0;
+          filter: blur(12px);
+          z-index: -1;
+        }
+      }
 
-        @keyframes fadeOut {
-            to { 
-                opacity: 0;
-                filter: blur(10px);
-                z-index: -1;
-            }
-        }
+      /* ─── Fixed Controls (top corners) ─── */
+      #theme-switcher {
+        position: fixed;
+        top: 14px;
+        left: 14px;
+        z-index: 10000;
+      }
+      #theme-toggle {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 16px;
+        font-family: var(--font-display);
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        cursor: pointer;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 2px 12px #0004;
+        transition: all 0.25s;
+      }
+      #theme-toggle:hover {
+        background: var(--bg-2);
+      }
+      #theme-options {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        background: var(--card);
+        backdrop-filter: blur(16px);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 6px 0;
+        box-shadow: 0 8px 28px #0008;
+        min-width: 170px;
+        overflow: hidden;
+      }
+      #theme-options div {
+        padding: 10px 18px;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--text);
+        transition: background 0.15s;
+      }
+      #theme-options div:hover {
+        background: var(--accent);
+        color: #fff;
+      }
+      #theme-switcher:hover #theme-options {
+        display: block;
+      }
 
-        /* Custom message box style */
-        .message-box {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--theme-card);
-            /*backdrop-filter: blur(10px);*/
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-            z-index: 20000;
-            display: none; /* Hidden by default */
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-        .message-box.visible {
-            display: flex;
-        }
+      #background-changer {
+        position: fixed;
+        top: 14px;
+        right: 14px;
+        z-index: 10000;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      #background-filename {
+        font-size: 11px;
+        color: var(--text-muted);
+        background: var(--card);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 5px 10px;
+        max-width: 140px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #background-changer button {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+        cursor: pointer;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 2px 10px #0003;
+        transition: all 0.25s;
+      }
+      #background-changer button:hover {
+        background: var(--accent);
+        color: #fff;
+      }
 
-        .message-box-text {
-            margin-bottom: 15px;
+      /* ─── Easter egg ─── */
+      .easter {
+        position: fixed;
+        width: 46px;
+        border-radius: 50%;
+        z-index: 999;
+        bottom: -4px;
+        right: -4px;
+        object-fit: contain;
+        pointer-events: auto;
+      }
+      .easter img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: contain;
+        transition: transform 0.3s ease;
+      }
+      .easter img:hover {
+        transform: scale(1.05) translateY(-50px) translateX(-100px);
+      }
+
+      /* ─── LAYOUT ─── */
+      /* 
+        New layout: sidebar slides in/out as an overlay panel.
+        Gallery always takes full width. 
+        A floating toolbar at top holds search toggle + page info.
+      */
+
+      /* Top floating bar */
+      #topbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        z-index: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px;
+        gap: 10px;
+        background: linear-gradient(
+          to bottom,
+          rgba(8, 14, 30, 0.82) 0%,
+          transparent 100%
+        );
+        pointer-events: none;
+      }
+      #topbar > * {
+        pointer-events: auto;
+      }
+
+      #toggle-sidebar-btn {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 16px;
+        font-family: var(--font-display);
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        cursor: pointer;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 2px 10px #0003;
+        transition: all 0.25s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #toggle-sidebar-btn:hover {
+        background: var(--accent);
+        color: #fff;
+      }
+      #toggle-sidebar-btn .bar-icon {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      #toggle-sidebar-btn .bar-icon span {
+        display: block;
+        width: 16px;
+        height: 2px;
+        background: currentColor;
+        border-radius: 2px;
+        transition: all 0.3s;
+      }
+
+      /* Inline search bar in topbar (visible when sidebar closed) */
+      #topbar-search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: opacity 0.2s;
+      }
+      #topbar-search.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #topbar-input {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-family: var(--font-body);
+        font-size: 14px;
+        color: var(--text);
+        backdrop-filter: blur(12px);
+        outline: none;
+        width: 220px;
+        transition:
+          border-color 0.2s,
+          width 0.3s;
+      }
+      #topbar-input:focus {
+        border-color: var(--accent);
+        width: 280px;
+      }
+      #topbar-input::placeholder {
+        color: var(--text-muted);
+      }
+      #topbar-go {
+        background: var(--accent);
+        border: none;
+        border-radius: 10px;
+        padding: 8px 18px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      #topbar-go:hover {
+        opacity: 0.85;
+      }
+
+      /* Page info pill */
+      #page-pill {
+        background: var(--card);
+        border: 1px solid var(--border);
+        backdrop-filter: blur(12px);
+        border-radius: 10px;
+        padding: 6px 14px;
+        font-size: 12px;
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+      #page-pill strong {
+        color: var(--text);
+      }
+
+      /* ─── Sidebar overlay ─── */
+      #sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 800;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(3px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+      }
+      #sidebar-overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: var(--sidebar-w);
+        z-index: 900;
+        background: var(--card);
+        backdrop-filter: blur(20px);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        transform: translateX(-100%);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+      #sidebar.open {
+        transform: translateX(0);
+      }
+
+      .sidebar-header {
+        padding: 18px 20px 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--card);
+        backdrop-filter: blur(20px);
+        z-index: 2;
+      }
+      .sidebar-header h1 {
+        font-family: var(--font-display);
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--text);
+        text-shadow: 0 0 20px var(--accent-glow);
+        letter-spacing: -0.3px;
+      }
+      #close-sidebar {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-muted);
+        font-size: 20px;
+        line-height: 1;
+        padding: 4px;
+        border-radius: 6px;
+        transition: color 0.2s;
+      }
+      #close-sidebar:hover {
+        color: var(--text);
+      }
+
+      .sidebar-body {
+        padding: 14px;
+        flex: 1;
+      }
+
+      /* Search box inside sidebar */
+      .s-search-box {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .s-input {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--bg-2);
+        color: var(--text);
+        font-family: var(--font-body);
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .s-input:focus {
+        border-color: var(--accent);
+      }
+      .s-input::placeholder {
+        color: var(--text-muted);
+      }
+      .s-btn-row {
+        display: flex;
+        gap: 8px;
+      }
+      .s-btn {
+        flex: 1;
+        padding: 10px;
+        border-radius: 10px;
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        font-family: var(--font-display);
+        font-size: 13px;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .s-btn:hover {
+        opacity: 0.85;
+      }
+      .s-btn.secondary {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        flex: 0 0 44px;
+      }
+      .s-btn img {
+        width: 14px;
+        height: 14px;
+      }
+
+      /* Tags suggestions */
+      #tagsContainer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      .tag {
+        padding: 4px 10px;
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 7px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .tag:hover,
+      .tag.selected {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+
+      /* Divider */
+      .s-divider {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 12px 0;
+        color: var(--text-muted);
+        font-size: 11px;
+        font-family: var(--font-display);
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      .s-divider::before,
+      .s-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+
+      /* Site selector */
+      .site-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-bottom: 4px;
+      }
+      .site-button {
+        padding: 9px 8px;
+        border-radius: 9px;
+        border: 1px solid var(--border);
+        background: var(--bg-2);
+        color: var(--text);
+        font-family: var(--font-body);
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+      }
+      .site-button.active,
+      .site-button:hover {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+
+      /* Rating buttons */
+      .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .rating-button {
+        flex: 1 0 calc(33% - 4px);
+        padding: 9px 4px;
+        border-radius: 9px;
+        border: 1px solid transparent;
+        background: var(--bg-2);
+        color: var(--text);
+        font-size: 11px;
+        font-family: var(--font-body);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+        white-space: nowrap;
+      }
+      .rating-button:hover {
+        background: var(--accent);
+        color: #fff;
+      }
+      .rating-button.active {
+        background: var(--accent);
+        color: #fff;
+      }
+      .rating-button[data-rating="g"] {
+        box-shadow: inset 0 0 0 1px #00ffcc44;
+      }
+      .rating-button[data-rating="s"] {
+        box-shadow: inset 0 0 0 1px #00ff6644;
+      }
+      .rating-button[data-rating="q"] {
+        box-shadow: inset 0 0 0 1px #ffcc0044;
+      }
+      .rating-button[data-rating="e"] {
+        box-shadow: inset 0 0 0 1px #ff336644;
+      }
+      .rating-button[data-rating="all"] {
+        box-shadow: inset 0 0 0 1px #3399ff44;
+      }
+
+      /* ─── GALLERY ─── */
+      #gallery-wrap {
+        width: 100%;
+        padding-top: 56px; /* topbar height */
+        padding-bottom: 72px; /* pagination height */
+      }
+
+      .container {
+        columns: 5 180px;
+        column-gap: var(--gap);
+        padding: var(--gap);
+        width: 100%;
+      }
+
+      .img-wrapper {
+        break-inside: avoid;
+        margin-bottom: var(--gap);
+        position: relative;
+        display: block;
+        cursor: pointer;
+        border-radius: var(--radius);
+        overflow: hidden;
+        transition:
+          transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+          box-shadow 0.35s ease;
+        will-change: transform;
+      }
+      .img-wrapper:hover {
+        transform: scale(1.03) translateY(-4px);
+        box-shadow:
+          0 12px 40px var(--accent-glow),
+          0 4px 16px #0008;
+        z-index: 10;
+      }
+
+      .gallery-img {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: var(--radius);
+        background: var(--card);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+      }
+      .gallery-img.loaded {
+        opacity: 1;
+      }
+
+      /* Skeleton */
+      .img-skeleton {
+        position: absolute;
+        inset: 0;
+        background: var(--card);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .img-skeleton::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          90deg,
+          transparent 25%,
+          rgba(100, 130, 220, 0.18) 50%,
+          transparent 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+      }
+      @keyframes shimmer {
+        from {
+          background-position: 200% 0;
         }
-
-        .message-box-button {
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: none;
-            background: var(--theme-accent);
-            color: white;
-            cursor: pointer;
-            transition: all 0.2s;
+        to {
+          background-position: -200% 0;
         }
+      }
 
-        .message-box-button:hover {
-            opacity: 0.9;
+      /* Badges */
+      .resolution-badge,
+      .video-badge {
+        position: absolute;
+        z-index: 4;
+        background: rgba(8, 14, 30, 0.7);
+        backdrop-filter: blur(6px);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 3px 8px;
+        border-radius: 7px;
+        font-family: var(--font-display);
+        font-size: 11px;
+        font-weight: 700;
+        pointer-events: none;
+      }
+      .resolution-badge {
+        top: 7px;
+        left: 7px;
+      }
+      .video-badge {
+        top: 7px;
+        right: 7px;
+      }
+
+      /* Hover overlay on image */
+      .img-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to top,
+          rgba(8, 14, 30, 0.75) 0%,
+          transparent 55%
+        );
+        border-radius: var(--radius);
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+      }
+      .img-wrapper:hover .img-overlay {
+        opacity: 1;
+      }
+
+      /* Tag tooltip */
+      #imageTooltip {
+        position: fixed;
+        pointer-events: none;
+        background: var(--card);
+        backdrop-filter: blur(16px);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 11px;
+        font-size: 12px;
+        max-width: 320px;
+        white-space: normal;
+        word-break: break-word;
+        z-index: 999999;
+        display: none;
+        line-height: 1.45;
+        box-shadow: 0 8px 28px #0008;
+      }
+
+      /* ─── Pagination (fixed bottom bar) ─── */
+      #pagination {
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 600;
+        background: var(--card);
+        backdrop-filter: blur(16px);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 10px 20px;
+        box-shadow: 0 4px 24px #0005;
+      }
+      .page-button {
+        padding: 7px 16px;
+        border-radius: 9px;
+        border: none;
+        background: var(--bg-2);
+        color: var(--text);
+        font-family: var(--font-display);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .page-button:hover:not(.disabled) {
+        background: var(--accent);
+        color: #fff;
+      }
+      .page-button.disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+      }
+      #pageInfob {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      /* ─── Loading / Error ─── */
+      .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 50vh;
+      }
+      .loading img {
+        width: 40px;
+        height: 40px;
+      }
+      .error {
+        text-align: center;
+        color: var(--text-muted);
+        padding: 60px 20px;
+        font-size: 15px;
+      }
+
+      /* ─── Message box ─── */
+      .message-box {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--card);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 8px 40px #0008;
+        z-index: 20000;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        min-width: 240px;
+      }
+      .message-box.visible {
+        display: flex;
+      }
+      .message-box-text {
+        margin-bottom: 16px;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .message-box-button {
+        padding: 8px 24px;
+        border-radius: 9px;
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      .message-box-button:hover {
+        opacity: 0.85;
+      }
+
+      /* ─── Fancybox overrides ─── */
+      .fancybox__container {
+        --fancybox-bg: rgba(5, 10, 22, 0.97);
+        --fancybox-color: #dde3f5;
+      }
+      .fancybox__image {
+        max-width: 92vw !important;
+        max-height: 88vh !important;
+        object-fit: contain;
+        border-radius: 12px;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+      }
+      .fancybox__caption {
+        background: rgba(14, 22, 50, 0.9);
+        color: var(--text);
+        padding: 10px 18px;
+        font-size: 12px;
+        max-width: 66%;
+        margin: 12px auto 0;
+        border-radius: 10px;
+        text-align: center;
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+      }
+      .fancybox__button {
+        background: rgba(59, 91, 219, 0.7);
+        border-radius: 8px;
+        transition: all 0.2s;
+      }
+      .fancybox__button:hover {
+        background: rgba(59, 91, 219, 1);
+        transform: scale(1.08);
+      }
+      .fancybox__button--close {
+        background: rgba(192, 57, 43, 0.75);
+      }
+      .fancybox__button--close:hover {
+        background: rgba(192, 57, 43, 1);
+      }
+      .fancybox__html5video {
+        max-width: 88vw;
+        max-height: 82vh;
+        border-radius: 10px;
+        background: #000;
+      }
+
+      /* ─── Mobile / Responsive ─── */
+      @media (max-width: 600px) {
+        :root {
+          --sidebar-w: 100vw;
+          --gap: 6px;
+          --radius: 10px;
         }
-
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0); /* Semi-transparent background for blending */
-            padding: 10px;
-            border-radius: 50%;
-            z-index: 10000;
+        .container {
+          columns: 2 120px;
         }
-
-        .loading img {
-            width: 30px; /* Smaller size */
-            height: 30px;
+        #topbar-input {
+          width: 140px;
         }
-        #background-changer {
-    position: fixed;
-    top: 18px;
-    right: 18px;
-    z-index: 10000;
-    display: flex;
-    gap: 10px;
-}
+        #topbar-input:focus {
+          width: 180px;
+        }
+        #background-filename {
+          display: none;
+        }
+        #pagination {
+          width: 88%;
+          justify-content: space-between;
+          padding: 8px 14px;
+          bottom: 10px;
+        }
+        .easter {
+          width: 38px;
+        }
+        .fancybox__image {
+          max-width: 98vw !important;
+          max-height: 78vh !important;
+        }
+        .fancybox__caption {
+          max-width: 94%;
+          font-size: 11px;
+          padding: 7px 10px;
+        }
+      }
+      @media (min-width: 601px) and (max-width: 900px) {
+        .container {
+          columns: 3 160px;
+        }
+      }
+      @media (min-width: 901px) and (max-width: 1400px) {
+        .container {
+          columns: 4 180px;
+        }
+      }
+      @media (min-width: 1401px) and (max-width: 2000px) {
+        .container {
+          columns: 5 190px;
+        }
+      }
+      @media (min-width: 2001px) {
+        .container {
+          columns: 7 200px;
+        }
+      }
 
-#background-changer button {
-    background: var(--theme-bg-1);
-/*    backdrop-filter: blur(8px);*/
-    border: none;
-    border-radius: 14px;
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    color: #e3e8f0;
-    cursor: pointer;
-    box-shadow: 0 2px 12px #0003;
-    transition: all 0.3s ease;
-}
-
-#background-changer button:hover {
-    background: rgba(40, 50, 90, 0.7);
-}
-#pageInfob {
-    font-size: 12px; /* Adjust the size as needed */
-    font-weight: bold; /* Optional: Make it bold */
-    color: var(--theme-text); /* Optional: Ensure it matches the theme */
-}
-.image-tooltip {
-  position: fixed;
-  pointer-events: none;
-  background: rgba(20, 30, 60, 0.5);
-  color: #e3e8f0;
-  padding: 10px 12px;
-  border-radius: 10px;
-  font-size: 12px;
-  max-width: 360px;
-  white-space: normal;
-  word-break: break-word;
-  z-index: 999999;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
-  /*backdrop-filter: blur(5px); */  
-  display: none;
-  line-height: 1.4;
-  border: 1px solid rgba(100, 120, 200, 0.3);
-}
-.video-badge {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: var(--theme-bg-2);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 7.5px;
-    font-size: 15px;
-    font-weight: bold;
-    z-index: 4;
-    pointer-events: none;
-    transition: transform .30s cubic-bezier(.4,2,.6,1), opacity .30s cubic-bezier(.4,2,.6,1);
-    opacity: 1;
-    transform: scale(1);
-}
-.divider-text { display: flex; align-items: center; text-align: center; margin: 20px 0; color: var(--theme-text); opacity: 0.8; }
-.divider-text::before,
-.divider-text::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-.divider-text:not(:empty)::before {
-  margin-right: .75em;
-}
-.divider-text:not(:empty)::after {
-  margin-left: .75em;
-}
-.easter{
-    position: fixed;
-    width: 50px;
-    /* height: 250px; */
-    border-radius: 50%;
-    object-fit: contain;
-    vertical-align: middle;
-    z-index: 999;
-    bottom: -5px;
-    right: -5px;
-}
-.easter img{
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: contain;
-    vertical-align: middle;
-    transition: transform 0.3s ease;
-}
-.easter img:hover{
-    transform: scale(1.05) translateY(-50px) translateX(-100px);
-}
+      /* Sidebar always overlay, never pushes content */
     </style>
-</head>
-<body>
-    <div id="imageTooltip" class="image-tooltip"></div>
+  </head>
+  <body>
+    <!-- Overlays -->
+    <div id="imageTooltip"></div>
     <div id="wallpaper-overlay"></div>
-    <div class="easter"><img src="https://i.ibb.co.com/rRY2tm4t/bf595082bdedd3d01c6cbc4d9a6384b9.png" alt="jawa" id="backgroundImage"></div>
+
+    <!-- Easter egg -->
+    <div class="easter">
+      <img
+        src="https://i.ibb.co.com/rRY2tm4t/bf595082bdedd3d01c6cbc4d9a6384b9.png"
+        alt="jawa"
+        id="backgroundImage"
+      />
+    </div>
+
+    <!-- Fixed controls -->
     <div id="background-changer">
-        <button id="prev-background">&lt;</button>
-        <button id="next-background">&gt;</button>
+      <button id="prev-background">‹</button>
+      <div id="background-filename"></div>
+      <button id="next-background">›</button>
     </div>
-    <div id="background-filename" style="text-align: center; color: var(--theme-text); margin-top: 5px; font-size: 14px;"></div>
     <div id="theme-switcher">
-        <button id="theme-toggle">Theme ▼</button>
-        <div id="theme-options">
-            <div data-theme="default">Midnight Blue</div>
-            <div data-theme="deep-purple">Deep Purple</div>
-            <div data-theme="emerald">Emerald Night</div>
-            <div data-theme="crimson">Crimson Dusk</div>
-        </div>
+      <button id="theme-toggle">Theme ▾</button>
+      <div id="theme-options">
+        <div data-theme="default">Midnight Blue</div>
+        <div data-theme="deep-purple">Deep Purple</div>
+        <div data-theme="emerald">Emerald Night</div>
+        <div data-theme="crimson">Crimson Dusk</div>
+      </div>
     </div>
 
-    <div class="main-wrapper">
-        <div class="side">
-            <h1>Image Search Gallery</h1>
-        
-            <div class="search-container">
-                <div class="search-box">
-                    <input type="text" class="search-input" id="searchInput" placeholder="Search tags...">
-                    <div class="search-box-buttons">
-                        <button class="search-button wide" id="searchButton">
-                            <img src="https://img.icons8.com/?size=100&id=7695&format=png&color=ffffff" alt="Search" class="search-icon">
-                        </button>
-                        <button class="search-button" id="refreshButton">
-                            <img src="https://img.icons8.com/?size=100&id=11682&format=png&color=ffffff" alt="Refresh" class="search-icon">
-                        </button>
-                    </div>
-                </div>
-                <div id="tagsContainer" class="tags-container"></div>
-                <div class="divider-text"><span>SITES</span></div>
-                
-                <div class="site-selector">
-                    <button class="site-button active" data-site="danbooru">Danbooru</button>
-                    <button class="site-button" data-site="yandere">Yande.re</button>
-                    <button class="site-button" data-site="gelbooru">Gelbooru</button>
-                    <button class="site-button" data-site="kona">Konachan</button>
-                </div>
-                <div class="divider-text"><span>RATING</span></div>
-                <div class="filter-row">
-                    <button class="rating-button" data-rating="g">General 🟦</button>
-                    <button class="rating-button active" data-rating="s">Safe ✅</button>
-                    <button class="rating-button" data-rating="q">Moderate ⚠️</button>
-                    <button class="rating-button" data-rating="e">Explicit 🔞</button>
-                    <button class="rating-button" data-rating="all">All 🌐</button>
-                </div>
-            </div>
-        </div>
-        <div class="sider">
-            <span id ="pageInfoa">Page 1 of 1</span>
-            <div class="pagination" id="pagination">
-                <button class="page-button disabled" id="prevPage">&lt;</button>
-                <span id="pageInfob">Page 1 of 1</span>
-                <button class="page-button disabled" id="nextPage">&gt;</button>
-            </div>
-            
-            <div class="container" id="imageContainer"></div>
-        </div>
-        
+    <!-- Topbar -->
+    <div id="topbar">
+      <button id="toggle-sidebar-btn">
+        <span class="bar-icon"> <span></span><span></span><span></span> </span>
+        Search
+      </button>
+      <div id="topbar-search">
+        <input
+          type="text"
+          id="topbar-input"
+          placeholder="Quick search…"
+          autocomplete="off"
+        />
+        <button id="topbar-go">Go</button>
+      </div>
+      <div id="page-pill">
+        <strong id="pill-api">API 1</strong> · <span id="pill-page">p1/1</span>
+      </div>
     </div>
 
-    <!-- Custom message box -->
+    <!-- Sidebar overlay backdrop -->
+    <div id="sidebar-overlay"></div>
+
+    <!-- Sidebar panel -->
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <h1>🖼 Gallery</h1>
+        <button id="close-sidebar" title="Close">✕</button>
+      </div>
+      <div class="sidebar-body">
+        <div class="s-search-box">
+          <input
+            type="text"
+            class="s-input"
+            id="searchInput"
+            placeholder="Search tags…"
+            autocomplete="off"
+          />
+          <div class="s-btn-row">
+            <button class="s-btn" id="searchButton">
+              <img
+                src="https://img.icons8.com/?size=100&id=7695&format=png&color=ffffff"
+                alt="Search"
+              />
+              Search
+            </button>
+            <button
+              class="s-btn secondary"
+              id="refreshButton"
+              title="Random page"
+            >
+              <img
+                src="https://img.icons8.com/?size=100&id=11682&format=png&color=ffffff"
+                alt="Refresh"
+              />
+            </button>
+          </div>
+        </div>
+
+        <div id="tagsContainer"></div>
+
+        <div class="s-divider">Sites</div>
+        <div class="site-selector">
+          <button class="site-button active" data-site="danbooru">
+            Danbooru
+          </button>
+          <button class="site-button" data-site="yandere">Yande.re</button>
+          <button class="site-button" data-site="gelbooru">Gelbooru</button>
+          <button class="site-button" data-site="kona">Konachan</button>
+        </div>
+
+        <div class="s-divider">Rating</div>
+        <div class="filter-row">
+          <button class="rating-button" data-rating="g">General 🟦</button>
+          <button class="rating-button active" data-rating="s">Safe ✅</button>
+          <button class="rating-button" data-rating="q">Moderate ⚠️</button>
+          <button class="rating-button" data-rating="e">Explicit 🔞</button>
+          <button class="rating-button" data-rating="all">All 🌐</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gallery -->
+    <div id="gallery-wrap">
+      <div class="container" id="imageContainer"></div>
+    </div>
+
+    <!-- Pagination -->
+    <div id="pagination">
+      <button class="page-button disabled" id="prevPage">‹ Prev</button>
+      <span id="pageInfob">p 1 / 1</span>
+      <button class="page-button disabled" id="nextPage">Next ›</button>
+    </div>
+
+    <!-- Message box -->
     <div id="messageBox" class="message-box">
-        <div id="messageText" class="message-box-text"></div>
-        <button id="messageCloseButton" class="message-box-button">OK</button>
+      <div id="messageText" class="message-box-text"></div>
+      <button id="messageCloseButton" class="message-box-button">OK</button>
     </div>
+
     <script>
-        // Background images and theme switching (preserved from your code)
-        const backgroundImages = [];
+      /* ─── Background images ─── */
+      const backgroundImages = [];
+      const max = 15,
+        letters = ["", "a", "b", "c", "d", "e", "f", "g", "h"];
+      for (let i = 0; i < max; i++) {
+        backgroundImages.push(
+          `./asset/bgs/${(i % 9) + 1}${letters[Math.floor(i / 9)]}.webp`,
+        );
+      }
+      let currentBackgroundIndex = 0;
 
-        const max =15;
-        const letters = ['', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-
-        for (let i = 0; i < max; i++) {
-            const number = (i % 9) + 1;
-            const letter = letters[Math.floor(i / 9)];
-            backgroundImages.push(`./asset/bgs/${number}${letter}.webp`);
-        }
-
-        function preloadBackgroundImages() {
-            backgroundImages.forEach(url => {
-                const img = new Image();
-                img.src = url;
-            });
-        }
-
-        function setRandomBackground() {
-            let randomImage;
-            do {
-                randomImage = backgroundImages[Math.floor(Math.random() * backgroundImages.length)];
-            } while (randomImage === localStorage.getItem('lastBackground') && backgroundImages.length > 1);
-            
-            localStorage.setItem('lastBackground', randomImage);
-            
-            const overlay = document.getElementById('wallpaper-overlay');
-            overlay.style.backgroundImage = `url('${randomImage}')`;
-            document.body.style.backgroundImage = `
-                linear-gradient(135deg, rgba(10,20,40,0.5) 0%, rgba(26,35,126,0.5) 100%),
-                url('${randomImage}')
-            `;
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            preloadBackgroundImages();
-            setRandomBackground();
-            loadTags();
-            
-            // Set random API page on initial load
-            apiPage = Math.floor(Math.random() * 100) + 1;
-            
-            const themeOptions = document.querySelectorAll('#theme-options div');
-            const savedTheme = localStorage.getItem('theme') || 'default';
-            
-            document.body.classList.add(`theme-${savedTheme}`);
-            
-            themeOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    const theme = option.getAttribute('data-theme');
-                    
-                    document.body.classList.remove(
-                        'theme-default',
-                        'theme-deep-purple',
-                        'theme-emerald',
-                        'theme-crimson'
-                    );
-                    
-                    if (theme !== 'default') {
-                        document.body.classList.add(`theme-${theme}`);
-                    }
-                    
-                    localStorage.setItem('theme', theme);
-                });
-            });
-            // Also perform a rating-only Danbooru request on every page load/refresh
-            loadReq();
+      function preloadBackgroundImages() {
+        backgroundImages.forEach((url) => {
+          const i = new Image();
+          i.src = url;
         });
+      }
+      function setRandomBackground() {
+        let img;
+        do {
+          img =
+            backgroundImages[
+              Math.floor(Math.random() * backgroundImages.length)
+            ];
+        } while (
+          img === localStorage.getItem("lastBackground") &&
+          backgroundImages.length > 1
+        );
+        localStorage.setItem("lastBackground", img);
+        applyBackground(img);
+      }
+      function applyBackground(url) {
+        document.getElementById("wallpaper-overlay").style.backgroundImage =
+          `url('${url}')`;
+        document.body.style.backgroundImage = `
+          linear-gradient(135deg, rgba(8,14,30,0.6) 0%, rgba(18,28,70,0.55) 100%),
+          url('${url}')`;
+        document.body.style.backgroundSize = "cover";
+        document.body.style.backgroundAttachment = "fixed";
+        document.body.style.backgroundPosition = "center";
+        const fn = url.split("/").pop();
+        document.getElementById("background-filename").textContent = fn;
+        currentBackgroundIndex = backgroundImages.indexOf(url);
+        if (currentBackgroundIndex < 0) currentBackgroundIndex = 0;
+      }
+      function changeBackground(dir) {
+        if (dir === "next")
+          currentBackgroundIndex =
+            (currentBackgroundIndex + 1) % backgroundImages.length;
+        else
+          currentBackgroundIndex =
+            (currentBackgroundIndex - 1 + backgroundImages.length) %
+            backgroundImages.length;
+        const url = backgroundImages[currentBackgroundIndex];
+        localStorage.setItem("lastBackground", url);
+        applyBackground(url);
+        const ov = document.getElementById("wallpaper-overlay");
+        ov.style.backgroundImage = `url('${url}')`;
+        ov.style.animation = "none";
+        ov.offsetHeight; // reflow
+        ov.style.animation =
+          "zoomIn 1.5s cubic-bezier(0.2,0.8,0.4,1), fadeOut 1s ease-in-out 1.3s forwards";
+      }
+      document
+        .getElementById("prev-background")
+        .addEventListener("click", () => changeBackground("prev"));
+      document
+        .getElementById("next-background")
+        .addEventListener("click", () => changeBackground("next"));
 
-        // Global variables for the search functionality
-        let currentPage = 1;
-        let totalPages = 1;
-        let currentSite = 'danbooru'; // Adjusted to Danbooru as a default based on the API request you mentioned
-        let currentRating = 'g'; // Default rating
-        let searchResults = [];
+      /* ─── Theme ─── */
+      document.querySelectorAll("#theme-options div").forEach((opt) => {
+        opt.addEventListener("click", () => {
+          const t = opt.dataset.theme;
+          document.body.className = document.body.className
+            .replace(/theme-\S+/g, "")
+            .trim();
+          if (t !== "default") document.body.classList.add(`theme-${t}`);
+          localStorage.setItem("theme", t);
+        });
+      });
 
-        // Extra state
-        let apiPage = 1;       // API page (fetches 100 results each)
-        let webPage = 1;       // Local subpage (1–5 within the 100 results)
-        let resultsPerPage = 50;
+      /* ─── Sidebar toggle ─── */
+      const sidebar = document.getElementById("sidebar");
+      const sidebarOverlay = document.getElementById("sidebar-overlay");
+      const topbarSearch = document.getElementById("topbar-search");
 
-        // DOM elements
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
-        const refreshButton = document.getElementById('refreshButton');
-        const tagsContainer = document.getElementById('tagsContainer');
-        const imageContainer = document.getElementById('imageContainer');
-        const prevPageButton = document.getElementById('prevPage');
-        const nextPageButton = document.getElementById('nextPage');
-        const pageInfoa = document.getElementById('pageInfoa');
-        const pageInfob = document.getElementById('pageInfob');
-        const siteButtons = document.querySelectorAll('.site-button');
-        const ratingButtons = document.querySelectorAll('.rating-button');
-        const messageBox = document.getElementById('messageBox');
-        const messageText = document.getElementById('messageText');
-        const messageCloseButton = document.getElementById('messageCloseButton');
-        
-        // Show custom message box
-        function showMessage(message) {
-            messageText.textContent = message;
-            messageBox.classList.add('visible');
+      function openSidebar() {
+        sidebar.classList.add("open");
+        sidebarOverlay.classList.add("visible");
+        topbarSearch.classList.add("hidden");
+        document.getElementById("searchInput").focus();
+      }
+      function closeSidebar() {
+        sidebar.classList.remove("open");
+        sidebarOverlay.classList.remove("visible");
+        topbarSearch.classList.remove("hidden");
+      }
+      document
+        .getElementById("toggle-sidebar-btn")
+        .addEventListener("click", () => {
+          sidebar.classList.contains("open") ? closeSidebar() : openSidebar();
+        });
+      document
+        .getElementById("close-sidebar")
+        .addEventListener("click", closeSidebar);
+      sidebarOverlay.addEventListener("click", closeSidebar);
+
+      /* Topbar quick search syncs with sidebar input */
+      const topbarInput = document.getElementById("topbar-input");
+      const searchInput = document.getElementById("searchInput");
+      topbarInput.addEventListener("input", () => {
+        searchInput.value = topbarInput.value;
+      });
+      searchInput.addEventListener("input", () => {
+        topbarInput.value = searchInput.value;
+      });
+      document.getElementById("topbar-go").addEventListener("click", () => {
+        webPage = 1;
+        apiPage = 1;
+        performSearch();
+      });
+      topbarInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          webPage = 1;
+          apiPage = 1;
+          performSearch();
+        }
+      });
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          webPage = 1;
+          apiPage = 1;
+          performSearch();
+          closeSidebar();
+        }
+      });
+
+      /* ─── State ─── */
+      let currentSite = "danbooru",
+        currentRating = "g";
+      let searchResults = [],
+        apiPage = 1,
+        webPage = 1,
+        resultsPerPage = 50;
+      let allTags = [];
+
+      /* ─── DOM refs ─── */
+      const searchButton = document.getElementById("searchButton");
+      const refreshButton = document.getElementById("refreshButton");
+      const tagsContainer = document.getElementById("tagsContainer");
+      const imageContainer = document.getElementById("imageContainer");
+      const prevPageButton = document.getElementById("prevPage");
+      const nextPageButton = document.getElementById("nextPage");
+      const pageInfob = document.getElementById("pageInfob");
+      const pillApi = document.getElementById("pill-api");
+      const pillPage = document.getElementById("pill-page");
+      const messageBox = document.getElementById("messageBox");
+      const messageText = document.getElementById("messageText");
+      const messageCloseButton = document.getElementById("messageCloseButton");
+
+      function showMessage(msg) {
+        messageText.textContent = msg;
+        messageBox.classList.add("visible");
+      }
+      messageCloseButton.addEventListener("click", () =>
+        messageBox.classList.remove("visible"),
+      );
+
+      function debounce(fn, ms) {
+        let t;
+        return function (...a) {
+          clearTimeout(t);
+          t = setTimeout(() => fn.apply(this, a), ms);
+        };
+      }
+
+      /* ─── Tag loading ─── */
+      async function loadTags() {
+        try {
+          const r = await fetch("./tags.json");
+          if (!r.ok) return;
+          const data = await r.json();
+          allTags = Array.isArray(data)
+            ? data.filter((t) => t?.name && t?.post_count)
+            : [];
+          window.tagMap = {};
+          allTags.forEach((t) => {
+            window.tagMap[t.name] = t.post_count;
+          });
+        } catch (e) {
+          allTags = [];
+        }
+      }
+
+      function fetchTags(term) {
+        if (!term || term.length < 1) return [];
+        const last = term.trim().split(" ").pop();
+        return allTags
+          .filter((t) => t?.name?.includes(last))
+          .sort((a, b) => b.post_count - a.post_count)
+          .slice(0, 20)
+          .map((t) => t.name);
+      }
+
+      function showTagSuggestions(suggestions) {
+        tagsContainer.innerHTML = "";
+        suggestions.forEach((tag) => {
+          const el = document.createElement("div");
+          el.className = "tag";
+          el.textContent = tag;
+          el.addEventListener("click", () => fillSearchBar(tag));
+          tagsContainer.appendChild(el);
+        });
+      }
+
+      function fillSearchBar(tag) {
+        const parts = searchInput.value.trim().split(" ");
+        if (parts.length > 0 && parts[parts.length - 1] !== "")
+          parts[parts.length - 1] = tag;
+        else parts.push(tag);
+        const val = parts.join(" ") + " ";
+        searchInput.value = val;
+        topbarInput.value = val;
+        searchInput.focus();
+        tagsContainer.innerHTML = "";
+      }
+
+      searchInput.addEventListener(
+        "input",
+        debounce(async (e) => {
+          const last = e.target.value.trim().split(" ").pop();
+          if (last && last.length > 1) showTagSuggestions(fetchTags(last));
+          else tagsContainer.innerHTML = "";
+        }, 400),
+      );
+
+      /* ─── Search ─── */
+      async function performSearch() {
+        const tags = searchInput.value.trim().split(" ").filter(Boolean);
+        if (!tags.length) {
+          showMessage("Please enter at least one tag.");
+          return;
         }
 
-        // Debounce function to limit API requests
-        function debounce(func, delay) {
-            let timeout;
-            return function(...args) {
-                const context = this;
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(context, args), delay);
+        imageContainer.innerHTML =
+          '<div class="loading"><img src="./asset/loading.svg" alt="Loading…" /></div>';
+
+        try {
+          let searchTags = [...tags];
+          if (currentRating !== "all")
+            searchTags.push(`rating:${currentRating}`);
+
+          const endpoints = {
+            danbooru: `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(searchTags.join(" "))}&page=${apiPage}&limit=100`,
+            yandere: `https://yande.re/post.json?tags=${encodeURIComponent(searchTags.join(" "))}&page=${apiPage}&limit=100`,
+            gelbooru: `https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags=${encodeURIComponent(searchTags.join(" "))}&pid=${apiPage - 1}&limit=100&api_key=ceea44488795b1cc07ecaa6102e923f9599e279b86553c59a0936a126a92a381c6290893894f5ebe752584d148523738317d56c90dd39cb84b5bcb647b9d3f1e&user_id=1937005`,
+            kona: `https://konachan.net/post.json?tags=${encodeURIComponent(searchTags.join(" "))}&limit=100&page=${apiPage}`,
+          };
+
+          const proxyUrl = `https://api-olive-gamma.vercel.app/api/proxy?url=${encodeURIComponent(endpoints[currentSite])}`;
+          const resp = await fetch(proxyUrl);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const raw = await resp.json();
+
+          searchResults = normalizeResults(raw, currentSite);
+          searchResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+          renderImages();
+          updatePagination();
+        } catch (err) {
+          imageContainer.innerHTML =
+            '<div class="error">Error loading images. Please try again.</div>';
+          showMessage("Search failed: " + err.message);
+        }
+      }
+
+      async function loadReq() {
+        try {
+          currentSite = "danbooru";
+          let tags = "-furry+-futanari";
+          if (currentRating !== "all") tags += `+rating:${currentRating}`;
+          else tags += "+rating:g";
+          const apiUrl = `https://danbooru.donmai.us/posts.json?tags=${tags}&page=${apiPage}&limit=100`;
+          const proxyUrl = `https://api-olive-gamma.vercel.app/api/proxy?url=${encodeURIComponent(apiUrl)}`;
+          const resp = await fetch(proxyUrl);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const raw = await resp.json();
+          searchResults = normalizeResults(raw, "danbooru");
+          searchResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+          renderImages();
+          updatePagination();
+        } catch (e) {
+          console.error("Initial load failed:", e);
+        }
+      }
+
+      /* ─── Normalize ─── */
+      function normalizeResults(results, site) {
+        if (site === "danbooru")
+          return results.map((p) => ({
+            id: p.id,
+            file_url: p.file_url,
+            preview_url: p.preview_file_url || p.large_file_url || p.file_url,
+            sample_url: p.large_file_url || p.file_url,
+            image_width: p.image_width,
+            image_height: p.image_height,
+            tags: p.tag_string,
+            rating: p.rating,
+            score: p.score,
+            duration: p.media_asset?.duration,
+          }));
+        if (site === "gelbooru")
+          return (results.post || []).map((p) => ({
+            id: p.id,
+            file_url: p.file_url,
+            preview_url: p.preview_url || p.sample_url || p.file_url,
+            sample_url: p.sample_url || p.file_url,
+            image_width: p.width,
+            image_height: p.height,
+            tags: p.tags,
+            rating: p.rating,
+            score: p.score,
+          }));
+        return results.map((p) => ({
+          id: p.id,
+          file_url: p.file_url,
+          preview_url: p.preview_url || p.sample_url || p.file_url,
+          sample_url: p.sample_url || p.file_url,
+          image_width: p.width,
+          image_height: p.height,
+          tags: p.tags,
+          rating: p.rating,
+          score: p.score,
+        }));
+      }
+
+      /* ─── Render ─── */
+      function formatDuration(s) {
+        if (!s || s <= 0) return "0:00";
+        return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+      }
+
+      function renderImages() {
+        imageContainer.innerHTML = "";
+        if (!searchResults.length) {
+          imageContainer.innerHTML =
+            '<div class="error">No results found.</div>';
+          return;
+        }
+        const slice = searchResults.slice(
+          (webPage - 1) * resultsPerPage,
+          webPage * resultsPerPage,
+        );
+
+        // Use DocumentFragment for performance
+        const frag = document.createDocumentFragment();
+
+        slice.forEach((post) => {
+          const isVideo =
+            post.file_url &&
+            (post.file_url.endsWith(".mp4") ||
+              post.file_url.endsWith(".webm") ||
+              post.file_url.includes("video"));
+
+          let previewUrl = isVideo
+            ? post.preview_url
+            : currentSite === "yandere"
+              ? post.preview_url
+              : post.sample_url || post.preview_url || post.file_url;
+
+          const wrap = document.createElement("div");
+          wrap.className = "img-wrapper";
+
+          let resBadge = "";
+          if (post.image_width && post.image_height) {
+            const mx = Math.max(post.image_width, post.image_height);
+            if (mx >= 7680) resBadge = "8K";
+            else if (mx >= 5760) resBadge = "6K";
+            else if (mx >= 4320) resBadge = "5K";
+            else if (mx >= 3840) resBadge = "4K";
+            else if (mx >= 2880) resBadge = "3K";
+            else if (mx >= 1920) resBadge = "2K";
+            else if (mx >= 1280) resBadge = "HD";
+            if (resBadge)
+              resBadge = `<div class="resolution-badge">${resBadge}</div>`;
+          }
+          const vidBadge =
+            isVideo && post.duration
+              ? `<div class="video-badge">▶ ${formatDuration(post.duration)}</div>`
+              : "";
+
+          wrap.innerHTML = `
+            <div class="img-skeleton"></div>
+            ${resBadge}${vidBadge}
+            <div class="img-overlay"></div>
+            <img src="${previewUrl}"
+              alt="result"
+              class="gallery-img"
+              loading="lazy"
+              data-id="${post.id}"
+              data-full-url="${post.file_url || ""}"
+              data-tags="${(post.tags || "").substring(0, 500)}"
+              data-is-video="${isVideo}">
+          `;
+
+          const img = wrap.querySelector("img");
+          img.addEventListener("load", function () {
+            this.classList.add("loaded");
+            wrap.querySelector(".img-skeleton")?.remove();
+          });
+          img.addEventListener("error", function () {
+            wrap.querySelector(".img-skeleton")?.remove();
+            this.style.opacity = "0.3";
+          });
+
+          // Tooltip (desktop only)
+          if (window.matchMedia("(pointer:fine)").matches) {
+            const tooltip = document.getElementById("imageTooltip");
+            img.addEventListener("mouseenter", function () {
+              const tags = (this.dataset.tags || "").split(" ").filter(Boolean);
+              const sorted = [...tags]
+                .sort(
+                  (a, b) =>
+                    (window.tagMap?.[b] || 0) - (window.tagMap?.[a] || 0),
+                )
+                .slice(0, 20);
+              tooltip.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:4px;">${sorted
+                .map(
+                  (
+                    t,
+                  ) => `<span style="background:rgba(100,130,220,0.2);border:1px solid rgba(255,255,255,0.1);
+                  padding:2px 7px;border-radius:5px;font-size:11px;">${t}</span>`,
+                )
+                .join(
+                  "",
+                )}${tags.length > 20 ? `<span style="font-size:10px;color:var(--text-muted);align-self:center;">+${tags.length - 20} more</span>` : ""}</div>`;
+              tooltip.style.display = "block";
+            });
+            img.addEventListener("mousemove", function (e) {
+              tooltip.style.left = e.clientX + 16 + "px";
+              tooltip.style.top = e.clientY + 16 + "px";
+            });
+            img.addEventListener("mouseleave", function () {
+              tooltip.style.display = "none";
+            });
+          }
+
+          // Click → Fancybox
+          wrap.addEventListener("click", (e) => {
+            e.preventDefault();
+            const fullUrl = post.file_url;
+            const isVid =
+              fullUrl &&
+              (fullUrl.endsWith(".mp4") ||
+                fullUrl.endsWith(".webm") ||
+                fullUrl.includes("video"));
+            const opts = {
+              infinite: false,
+              Toolbar: { display: { left: [], middle: [], right: ["close"] } },
+              Thumbs: false,
+              preload: 0,
+              on: {
+                destroy: () => {
+                  document.getElementById("background-changer").style.display =
+                    "";
+                  document.getElementById("theme-switcher").style.display = "";
+                  document.getElementById("pagination").style.display = "";
+                },
+              },
             };
-        }
+            document.getElementById("background-changer").style.display =
+              "none";
+            document.getElementById("theme-switcher").style.display = "none";
+            document.getElementById("pagination").style.display = "none";
 
-        // Function to fetch tag suggestions
-        let allTags = []; // Cache loaded tags
-
-        // Load tags.json once at startup
-        async function loadTags() {
-            try {
-                const response = await fetch('./tags.json');
-                if (!response.ok) throw new Error('Failed to load tags.json');
-                const data = await response.json();
-                
-                // Validate structure
-                if (!Array.isArray(data)) throw new Error('tags.json is not an array');
-                allTags = data.filter(tag => 
-                    tag && typeof tag === 'object' && tag.name && tag.post_count
-                );
-                window.tagMap = {};
-                allTags.forEach(tag => {
-                    window.tagMap[tag.name] = tag.post_count;
-                });
-                console.log(`Loaded ${allTags.length} valid tags`);
-            } catch (error) {
-                console.error('Error loading tags:', error);
-                allTags = []; // Fallback to empty array
-            }
-        }
-
-        // Filter tags locally (no API calls)
-        function fetchTags(searchTerm) {
-            if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length < 1) {
-                return [];
-            }
-            
-            const term = searchTerm.trim();
-            const lastWord = term.split(' ').pop();
-            
-            return allTags
-                // First filter: Ensure we only work with valid tag objects
-                .filter(tag => {
-                    return (
-                        tag &&
-                        typeof tag === 'object' &&
-                        tag.name &&
-                        typeof tag.name === 'string'
-                    );
-                })
-                // Second filter: Actual search matching
-                .filter(tag => tag.name.includes(lastWord))
-                .sort((a, b) => b.post_count - a.post_count)
-                .slice(0, 20)
-                .map(tag => tag.name);
-        }
-
-        // Show tag suggestions
-        function showTagSuggestions(suggestions) {
-            tagsContainer.innerHTML = '';
-            
-            suggestions.forEach(tag => {
-                const tagElement = document.createElement('div');
-                tagElement.className = 'tag';
-                tagElement.textContent = tag;
-                tagElement.addEventListener('click', () => fillSearchBar(tag));
-                tagsContainer.appendChild(tagElement);
-            });
-        }
-
-        // Fill search bar with clicked tag
-        function fillSearchBar(tag) {
-            const currentTags = searchInput.value.trim().split(' ');
-            if (currentTags.length > 0 && currentTags[currentTags.length - 1] !== '') {
-                currentTags[currentTags.length - 1] = tag;
-                searchInput.value = currentTags.join(' ') + ' ';
+            if (isVid) {
+              opts.Video = { autoStart: false, showControls: true, volume: 1 };
+              Fancybox.show(
+                [
+                  {
+                    src: fullUrl,
+                    type: "html5video",
+                    caption: post.tags
+                      ? `Tags: ${post.tags.split(" ").slice(0, 15).join(", ")}…`
+                      : "",
+                    html5video: { preload: true },
+                  },
+                ],
+                opts,
+              );
             } else {
-                searchInput.value += tag + ' ';
+              opts.Images = { zoom: true, initialSize: "fit" };
+              Fancybox.show(
+                [
+                  {
+                    src: fullUrl,
+                    type: "image",
+                    caption: post.tags
+                      ? `Tags: ${post.tags.split(" ").slice(0, 15).join(", ")}…`
+                      : "",
+                  },
+                ],
+                opts,
+              );
             }
-            searchInput.focus();
-            tagsContainer.innerHTML = ''; // Hide suggestions after selection
-        }
-        // Perform search function
-        async function performSearch() {
-            webPage = 1; // reset slice
-            // use apiPage for the &page= (Danbooru/Yande.re/etc.)
-            const tags = searchInput.value.trim().split(' ').filter(t => t);
-            if (tags.length === 0) {
-                showMessage('Please enter at least one tag.');
-                return;
-            }
+          });
 
-            imageContainer.innerHTML = '<div class="loading"><img src="./asset/loading.svg" alt="Loading..." /></div>';
-            
-            try {
-                // Build the tags array conditionally
-                let searchTags = [...tags];
-                
-                // Only add rating filter if it's not "all"
-                if (currentRating !== 'all') {
-                    searchTags.push(`rating:${currentRating}`);
-                }
-                
-                const apiEndpoints = {
-                    'danbooru': `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(searchTags.join(' '))}&page=${apiPage}&limit=100`,
-                    'yandere': `https://yande.re/post.json?tags=${encodeURIComponent(searchTags.join(' '))}&page=${apiPage}&limit=100`,
-                    'gelbooru': `https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags=${encodeURIComponent(searchTags.join(' '))}&pid=${apiPage - 1}&limit=100&api_key=ed2909b6af0fbf500dc461925cdcd25bc884bc1462a4bf64f8082360b427d8a7cb282d2c54a4183963878136e57536c85a61166e3c379c649681dcb5ab648334&user_id=1806774`,
-                    'kona': `https://konachan.net/post.json?tags=${encodeURIComponent(searchTags.join(' '))}&limit=100&page=${apiPage}`
-                };
-
-                const apiUrl = apiEndpoints[currentSite];
-                if (!apiUrl) {
-                    throw new Error('Invalid site selected');
-                }
-
-                const proxyUrl = `https://api-olive-gamma.vercel.app/api/proxy?url=${encodeURIComponent(apiUrl)}`;
-                const response = await fetch(proxyUrl);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                let rawResults = await response.json();
-
-                searchResults = normalizeResults(rawResults, currentSite);
-                searchResults.sort((a, b) => {
-                    const scoreA = a.score || 0;
-                    const scoreB = b.score || 0;
-                    return scoreB - scoreA;
-                });
-
-                renderImages();
-                updatePagination();
-            } catch (error) {
-                console.error('Search error:', error);
-                imageContainer.innerHTML = '<div class="error">Error searching images. Please try again.</div>';
-                showMessage('Search failed: ' + error.message);
-            }
-        }
-        refreshButton.addEventListener('click', () => {
-            // Randomize API page between 1 and 100
-            apiPage = Math.floor(Math.random() * 20) + 1;
-            webPage = 1;
-            
-            // If there's a search query, perform search with random page
-            if (searchInput.value.trim()) {
-                performSearch();
-            } else {
-                // If no search query, load random posts like initial load
-                loadReq();
-            }
+          frag.appendChild(wrap);
         });
-        // Normalize results from different booru APIs
-        function normalizeResults(results, site) {
-            switch(site) {
-                case 'danbooru':
-                    return results.map(post => ({
-                        id: post.id,
-                        file_url: post.file_url,
-                        preview_url: post.preview_file_url || post.large_file_url || post.file_url,
-                        sample_url: post.large_file_url || post.file_url,
-                        image_width: post.image_width,
-                        image_height: post.image_height,
-                        tags: post.tag_string,
-                        rating: post.rating,
-                        score: post.score
-                    }));
-                
-                case 'yandere':
-                    return results.map(post => ({
-                        id: post.id,
-                        file_url: post.file_url,
-                        preview_url: post.preview_url || post.sample_url || post.file_url,
-                        sample_url: post.sample_url || post.file_url,
-                        image_width: post.width,
-                        image_height: post.height,
-                        tags: post.tags,
-                        rating: post.rating,
-                        score: post.score
-                    }));
-                
-                case 'gelbooru':
-                    // Gelbooru returns an object with a 'post' property containing the array
-                    const posts = results.post || [];
-                    return posts.map(post => ({
-                        id: post.id,
-                        file_url: post.file_url,
-                        preview_url: post.preview_url || post.sample_url || post.file_url,
-                        sample_url: post.sample_url || post.file_url,
-                        image_width: post.width,
-                        image_height: post.height,
-                        tags: post.tags,
-                        rating: post.rating,
-                        score: post.score
-                    }));
-                case 'kona':
-                    return results.map(post => ({
-                        id: post.id,
-                        file_url: post.file_url,
-                        preview_url: post.preview_url || post.sample_url || post.file_url,
-                        sample_url: post.sample_url || post.file_url,
-                        image_width: post.width,
-                        image_height: post.height,
-                        tags: post.tags,
-                        rating: post.rating,
-                        score: post.score
-                    }));
-                default:
-                    return [];
-            }
+
+        imageContainer.appendChild(frag);
+        // Scroll to top of gallery
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      /* ─── Pagination ─── */
+      function updatePagination() {
+        const total = Math.ceil(searchResults.length / resultsPerPage) || 1;
+        pageInfob.textContent = `${webPage} / ${total}`;
+        pillApi.textContent = `API ${apiPage}`;
+        pillPage.textContent = `p${webPage}/${total}`;
+
+        const atStart = webPage <= 1 && apiPage <= 1;
+        const atEnd = webPage >= total && searchResults.length < 100;
+        prevPageButton.disabled = atStart;
+        nextPageButton.disabled = atEnd;
+        prevPageButton.classList.toggle("disabled", atStart);
+        nextPageButton.classList.toggle("disabled", atEnd);
+      }
+
+      prevPageButton.addEventListener("click", () => {
+        if (webPage > 1) {
+          webPage--;
+          renderImages();
+          updatePagination();
+        } else if (apiPage > 1) {
+          apiPage--;
+          webPage = 1;
+          performSearch();
         }
-        function getPreviewUrl(post) {
-            // Danbooru
-            if (post.preview_url) {
-                return post.preview_url;
-            }
-            // Yande.re
-            else if (post.sample_url) {
-                return post.sample_url;
-            }
-            // Gelbooru/Safebooru
-            else if (post.preview_url) {
-                return post.sample_url;
-            }
-            // Konachan
-            else if (post.preview_url) {
-                return post.preview_url;
-            }
-            // Fallback to full URL if no preview available
-            return post.file_url;
+      });
+      nextPageButton.addEventListener("click", () => {
+        const total = Math.ceil(searchResults.length / resultsPerPage);
+        if (webPage < total) {
+          webPage++;
+          renderImages();
+          updatePagination();
+        } else {
+          apiPage++;
+          webPage = 1;
+          performSearch();
         }
+      });
 
-        // Render images in the container
-        function renderImages() {
-            imageContainer.innerHTML = '';
-
-            if (searchResults.length === 0) {
-                imageContainer.innerHTML = '<div class="error">No results found</div>';
-                return;
-            }
-
-            const start = (webPage - 1) * resultsPerPage;
-            const end = start + resultsPerPage;
-            const slice = searchResults.slice(start, end);
-
-            slice.forEach(post => {
-                const imgWrapper = document.createElement('div');
-                imgWrapper.className = 'img-wrapper';
-
-                // Check if the file is a video
-                const isVideo = post.file_url && (
-                    post.file_url.endsWith('.mp4') || 
-                    post.file_url.endsWith('.webm') ||
-                    post.file_url.includes('video')
-                );
-
-                // Determine the preview URL based on file type and site
-                let previewUrl = '';
-                if (isVideo) {
-                    if (currentSite === 'gelbooru') {
-                        previewUrl = post.preview_url;
-                    } else if (currentSite === 'danbooru') {
-                        previewUrl = post.preview_url;
-                    }
-                } else {
-                    previewUrl = currentSite === "yandere"
-                        ? post.preview_url
-                        : (post.sample_url || post.preview_url || post.file_url);
-                }
-
-                const fullUrl = post.file_url;
-
-                let resolutionBadge = '';
-                if (post.image_width && post.image_height) {
-                    const maxDim = Math.max(post.image_width, post.image_height);
-                    if (maxDim >= 8000) resolutionBadge = '8K';
-                    else if (maxDim >= 6000) resolutionBadge = '6K';
-                    else if (maxDim >= 5000) resolutionBadge = '5K';
-                    else if (maxDim >= 4000) resolutionBadge = '4K';
-                    else if (maxDim >= 3000) resolutionBadge = '3K';
-                    else if (maxDim >= 2000) resolutionBadge = '2K';
-                    else if (maxDim >= 1000) resolutionBadge = '1K';
-                    if (resolutionBadge) resolutionBadge = `<div class="resolution-badge">${resolutionBadge}</div>`;
-                }
-
-                // Add video badge if it's a video
-                const videoBadge = isVideo ? '<div class="video-badge">VIDEO</div>' : '';
-
-                imgWrapper.innerHTML = `
-                    ${resolutionBadge}
-                    ${videoBadge}
-                    <div class="img-skeleton" data-id="${post.id}"></div>
-                    <img src="${previewUrl}" 
-                        alt="Search result" 
-                        class="gallery-img" 
-                        loading="lazy" 
-                        style="opacity:0;" 
-                        data-id="${post.id}" 
-                        data-full-url="${fullUrl}"
-                        data-tags="${post.tags}"
-                        data-is-video="${isVideo}">
-                `;
-
-                imageContainer.appendChild(imgWrapper);
-
-                const img = imgWrapper.querySelector('img');
-                img.addEventListener('load', function() {
-                    this.style.opacity = '1';
-                    imgWrapper.querySelector('.img-skeleton')?.remove();
-                });
-                const tooltip = document.getElementById('imageTooltip');
-
-                imageContainer.querySelectorAll('.gallery-img').forEach(img => {
-                    img.addEventListener('mouseenter', function(e) {
-                        const allTags = this.dataset.tags ? this.dataset.tags.split(' ') : [];
-                        const MAX_TAGS_TO_SHOW = 20;
-                        
-                        // Sort tags by post count using the pre-cached map
-                        const sortedTags = [...allTags].sort((a, b) => {
-                            const countA = window.tagMap[a] || 0;
-                            const countB = window.tagMap[b] || 0;
-                            return countB - countA; // Descending order
-                        });
-                        
-                        const limitedTags = sortedTags.slice(0, MAX_TAGS_TO_SHOW);
-                        
-                        // Create a more visually appealing display
-                        const tooltip = document.getElementById('imageTooltip');
-                        tooltip.innerHTML = `
-                            <div style="max-height: 500px; overflow-y: auto; padding: 4px;">
-                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                                    ${limitedTags.map(tag => 
-                                        `<span style="display: inline-block;
-                                                    background: rgba(120, 140, 220, 0.25);
-                                                    color: #e3e8f0;
-                                                    padding: 3px 6px;
-                                                    border-radius: 4px;
-                                                    font-size: inherit;
-                                                    border: 1px solid rgba(255, 255, 255, 0.1);">
-                                            ${tag}
-                                        </span>`
-                                    ).join('')}
-                                </div>
-                                ${allTags.length > MAX_TAGS_TO_SHOW ? 
-                                    `<div style="margin-top: 6px; font-style: italic; font-size: 11px; color: #a0a8c0;">
-                                        +${allTags.length - MAX_TAGS_TO_SHOW} more tags
-                                    </div>` : ''}
-                            </div>
-                        `;
-                        tooltip.style.display = 'block';
-                    });
-                    img.addEventListener('mousemove', function(e) {
-                        const tooltip = document.getElementById('imageTooltip');
-                        tooltip.style.left = (e.clientX + 15) + 'px';
-                        tooltip.style.top = (e.clientY + 15) + 'px';
-                    });
-
-                    img.addEventListener('mouseleave', function() {
-                        const tooltip = document.getElementById('imageTooltip');
-                        tooltip.style.display = 'none';
-                    });
-                });
-
-
-                imgWrapper.addEventListener('click', () => {
-                    window.open(fullUrl, '_blank');
-                });
-            });
-        }
-
-        // Update pagination info
-        function updatePagination() {
-            const totalWebPages = Math.ceil(searchResults.length / resultsPerPage) || 1;
-            pageInfoa.textContent = `API Page ${apiPage}`;
-            pageInfob.textContent = `${webPage} of ${totalWebPages}`;
-
-
-            prevPageButton.disabled = (webPage <= 1 && apiPage <= 1);
-            nextPageButton.disabled = (webPage >= totalWebPages && searchResults.length < 100);
-
-            if (webPage <= 1 && apiPage <= 1) {
-                prevPageButton.classList.add('disabled');
-            } else {
-                prevPageButton.classList.remove('disabled');
-            }
-
-            if (webPage >= totalWebPages && searchResults.length < 100) {
-                nextPageButton.classList.add('disabled');
-            } else {
-                nextPageButton.classList.remove('disabled');
-            }
-        }
-
-        // Event Listeners
-        const debouncedFetchTags = debounce(async function(e) {
-            const lastWord = e.target.value.trim().split(' ').pop();
-            if (lastWord && lastWord.length > 1) {
-                const suggestions = await fetchTags(lastWord);
-                showTagSuggestions(suggestions);
-            } else {
-                tagsContainer.innerHTML = '';
-            }
-        }, 500);
-
-        searchInput.addEventListener('input', debouncedFetchTags);
-
-        searchButton.addEventListener('click', () => {
+      /* ─── Site / Rating selectors ─── */
+      document.querySelectorAll(".site-button").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          document
+            .querySelectorAll(".site-button")
+            .forEach((b) => b.classList.remove("active"));
+          this.classList.add("active");
+          currentSite = this.dataset.site;
+          if (searchInput.value.trim()) {
             webPage = 1;
-            apiPage = 1;
             performSearch();
+          }
         });
-        
-        prevPageButton.addEventListener('click', () => {
-            if (webPage > 1) {
-                webPage--;
-                renderImages();
-                updatePagination();
-            } else if (apiPage > 1) {
-                apiPage--;
-                webPage = 1;
-                performSearch();
-            }
+      });
+      document.querySelectorAll(".rating-button").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          document
+            .querySelectorAll(".rating-button")
+            .forEach((b) => b.classList.remove("active"));
+          this.classList.add("active");
+          currentRating = this.dataset.rating;
+          if (searchInput.value.trim()) {
+            webPage = 1;
+            performSearch();
+          }
         });
+      });
 
-        nextPageButton.addEventListener('click', () => {
-            const totalWebPages = Math.ceil(searchResults.length / resultsPerPage);
-            if (webPage < totalWebPages) {
-                webPage++;
-                renderImages();
-                updatePagination();
-            } else {
-                apiPage++;
-                webPage = 1;
-                performSearch();
-            }
-        });
+      searchButton.addEventListener("click", () => {
+        webPage = 1;
+        apiPage = 1;
+        performSearch();
+        closeSidebar();
+      });
+      refreshButton.addEventListener("click", () => {
+        apiPage = Math.floor(Math.random() * 20) + 1;
+        webPage = 1;
+        if (searchInput.value.trim()) performSearch();
+        else loadReq();
+      });
 
-        // Site selector
-        // Site selector
-        siteButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                siteButtons.forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                currentSite = this.dataset.site;
-                if (searchInput.value.trim()) {
-                    webPage = 1;
-                    performSearch();
-                }
-            });
-        });
+      /* ─── Init ─── */
+      document.addEventListener("DOMContentLoaded", () => {
+        preloadBackgroundImages();
+        setRandomBackground();
+        loadTags();
+        apiPage = Math.floor(Math.random() * 100) + 1;
 
-        // Rating selector
-        ratingButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                ratingButtons.forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                currentRating = this.dataset.rating;
-                if (searchInput.value.trim()) {
-                    webPage = 1;
-                    performSearch();
-                }
-            });
-        });
-        
-        messageCloseButton.addEventListener('click', () => {
-            messageBox.classList.remove('visible');
-        });
-        // New: fetch Danbooru posts with only the rating tag (runs on page load)
-        async function loadReq() {
-            try {
-                // Ensure we query Danbooru and use the current apiPage (which gets randomized)
-                currentSite = 'danbooru';
-                
-                // Build tags conditionally based on current rating
-                let tags = '-furry+-futanari';
-                if (currentRating !== 'all') {
-                    tags += `+rating:${currentRating}`;
-                } else {
-                    tags += '+rating:g'; // Default to general rating for initial load
-                }
+        const savedTheme = localStorage.getItem("theme") || "default";
+        if (savedTheme !== "default")
+          document.body.classList.add(`theme-${savedTheme}`);
 
-                const apiUrl = `https://danbooru.donmai.us/posts.json?tags=${tags}&page=${apiPage}&limit=100`;
-                const proxyUrl = `https://api-olive-gamma.vercel.app/api/proxy?url=${encodeURIComponent(apiUrl)}`;
-
-                const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const rawResults = await response.json();
-
-                // Normalize, sort and render like the regular flow
-                searchResults = normalizeResults(rawResults, 'danbooru');
-                searchResults.sort((a, b) => (b.score || 0) - (a.score || 0));
-                renderImages();
-                updatePagination();
-            } catch (error) {
-                console.error('Danbooru initial fetch failed:', error);
-            }
-        }
-        let currentBackgroundIndex = 0;
-
-        function changeBackground(direction) {
-            if (direction === 'next') {
-                currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
-            } else if (direction === 'prev') {
-                currentBackgroundIndex = (currentBackgroundIndex - 1 + backgroundImages.length) % backgroundImages.length;
-            }
-
-            const newBackground = backgroundImages[currentBackgroundIndex];
-            localStorage.setItem('lastBackground', newBackground);
-
-            const overlay = document.getElementById('wallpaper-overlay');
-            overlay.style.backgroundImage = `url('${newBackground}')`;
-            overlay.style.animation = 'zoomIn 1.5s cubic-bezier(0.2, 0.8, 0.4, 1), fadeOut 1s ease-in-out 1.3s forwards';
-
-            document.body.style.backgroundImage = `
-                linear-gradient(135deg, rgba(10,20,40,0.5) 0%, rgba(26,35,126,0.5) 100%),
-                url('${newBackground}')
-            `;
-
-            // Update the background file name
-            const backgroundFilename = newBackground.split('/').pop(); // Extract the file name
-            document.getElementById('background-filename').textContent = `Background: ${backgroundFilename}`;
-        }
-
-        // Event listeners for the buttons
-        document.getElementById('prev-background').addEventListener('click', () => changeBackground('prev'));
-        document.getElementById('next-background').addEventListener('click', () => changeBackground('next'));
-
-        // Initialize the file name on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            const initialBackground = backgroundImages[currentBackgroundIndex];
-            const initialFilename = initialBackground.split('/').pop();
-            document.getElementById('background-filename').textContent = `Background: ${initialFilename}`;
-        });
+        loadReq();
+      });
     </script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+  </body>
 </html>

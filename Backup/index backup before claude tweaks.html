@@ -1,0 +1,1890 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Search Gallery</title>
+    <link rel="icon" type="image/x-icon" href="/asset/favicon.ico" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css"
+    />
+    <style>
+      /* Reset and base styles */
+      body {
+        font-family:
+          Arial Black,
+          Arial,
+          Helvetica,
+          sans-serif;
+        color: #e3e8f0;
+        font-weight: bold;
+        margin: 0;
+        background:
+          linear-gradient(
+            135deg,
+            var(--theme-bg-1) 25%,
+            var(--theme-bg-2) 100%
+          ),
+          url("") center/cover no-repeat fixed;
+        color: var(--theme-text);
+      }
+
+      .main-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: top;
+        justify-content: space-evenly;
+        max-width: 100vw;
+        padding: 20px;
+      }
+      .side {
+        position: sticky;
+        top: 0;
+        align-self: flex-start;
+        height: fit-content;
+        width: 280px;
+      }
+      .sider {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1; /* let it fill remaining space */
+        max-width: 70%; /* make it smaller overall */
+        margin-left: 20px; /* add space between sidebar and main content */
+      }
+      h1 {
+        text-align: center;
+        color: #e3e8f0;
+        font-size: 25px;
+        margin-bottom: 20px;
+        text-shadow:
+          2px 2px 16px #000a,
+          0 0 2px #1a237e;
+      }
+
+      .container {
+        column-count: 5; /* Number of columns (adjust for screen size) */
+        column-gap: 10px; /* Space between columns */
+        width: 100%;
+        max-width: 100%;
+        margin: 30px auto 0;
+        padding: 24px;
+        background: var(--theme-card);
+        /*backdrop-filter: blur(10px);*/
+        border-radius: 16px;
+      }
+
+      .img-wrapper {
+        break-inside: avoid; /* Masonry fix */
+        margin-bottom: 20px;
+        position: relative; /* Needed for absolute children */
+        display: inline-block; /* Ensure it respects column flow */
+        width: 100%; /* Make images stretch in column */
+        transition:
+          transform 0.4s cubic-bezier(0.333, 0.008, 0, 1),
+          box-shadow 0.7s ease;
+      }
+
+      .gallery-img {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 15px;
+        /* box-shadow: 0 2px 16px #000a; */
+        z-index: 2;
+        background: var(--theme-bg-1);
+        transition:
+          transform 0.4s cubic-bezier(0.333, 0.008, 0, 1),
+          box-shadow 0.7s ease;
+      }
+
+      .img-wrapper:hover {
+        transform: scale(1.05) translateY(-10px);
+        box-shadow: 0 4px 32px #1a237e99;
+        z-index: 99;
+      }
+
+      .resolution-badge {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background: rgba(20, 30, 60, 0.452);
+        color: #e3e8f0;
+        padding: 5px 10px;
+        border-radius: 7.5px;
+        font-size: 15px;
+        font-weight: bold;
+        z-index: 4;
+        pointer-events: none;
+        /*backdrop-filter: blur(5px);*/
+        transition:
+          transform 0.3s cubic-bezier(0.4, 2, 0.6, 1),
+          opacity 0.3s cubic-bezier(0.4, 2, 0.6, 1);
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .img-skeleton {
+        width: 100%;
+        aspect-ratio: 3 / 4;
+        background: #1a1f2e1a;
+        position: relative;
+        overflow: hidden;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        break-inside: avoid;
+        box-shadow: 0 2px 16px #000a;
+      }
+
+      .img-skeleton::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(
+          45deg,
+          transparent 25%,
+          rgba(83, 103, 175, 0.5) 50%,
+          transparent 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        pointer-events: none;
+        border-radius: inherit;
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+
+      .search-container {
+        width: 100%;
+        max-width: 800px;
+        margin: 20px auto;
+        background: var(--theme-card);
+        /*backdrop-filter: blur(10px);*/
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+        box-sizing: border-box;
+      }
+
+      .search-box {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 15px;
+        width: 100%;
+      }
+      .search-box-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        width: 100%;
+      }
+
+      .search-input {
+        flex: 1;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--theme-accent);
+        background: var(--theme-bg-2);
+        color: var(--theme-text);
+        font-size: 16px;
+        outline: none;
+      }
+
+      .search-button {
+        padding: 12px 24px;
+        border-radius: 12px;
+        border: none;
+        background: var(--theme-accent);
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .search-button.wide {
+        flex: 3; /* makes it wider than refresh */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #refreshButton {
+        flex: 1; /* narrower than search */
+        background-color: var(--theme-bg-2);
+        border: 1px var(--theme-accent);
+        outline: none;
+      }
+
+      .search-icon {
+        width: 12px;
+        height: 12px; /* make the black icon white */
+      }
+
+      .search-button:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+      }
+
+      .search-button:active {
+        transform: translateY(0);
+      }
+
+      .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 15px;
+      }
+
+      .tag {
+        padding: 6px 12px;
+        background: var(--theme-bg-2);
+        color: var(--theme-text);
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .tag:hover {
+        background: var(--theme-accent);
+        color: white;
+      }
+
+      .tag.selected {
+        background: var(--theme-accent);
+        color: white;
+      }
+
+      .filter-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+      }
+
+      .explicit-label,
+      .moderate-label,
+      .safe-label {
+        font-size: 22px;
+        vertical-align: middle;
+        margin-left: 4px;
+        color: #e3e8f0;
+        font-weight: bold;
+        letter-spacing: 1px;
+        user-select: none;
+        text-shadow: 0 1px 4px #000a;
+      }
+
+      .rating-button {
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: none;
+        background: var(--theme-bg-2);
+        color: var(--theme-text);
+        cursor: pointer;
+        transition: all 0.2s;
+        flex: 1; /* Make buttons flexible */
+        min-width: 80px; /* Minimum width */
+        max-width: 100%; /* Maximum width */
+        text-align: center; /* Center the text */
+        white-space: nowrap; /* Prevent text wrapping */
+        box-shadow: inset 0 0 0 transparent; /* default: no glow */
+      }
+
+      .rating-button:hover {
+        background: var(--theme-accent);
+      }
+      .rating-button[data-rating="g"] {
+        box-shadow: inset 0 0 2px #00ffcc; /* General → cyan glow */
+      }
+
+      .rating-button[data-rating="s"] {
+        box-shadow: inset 0 0 2px #00ff66; /* Safe → green glow */
+      }
+
+      .rating-button[data-rating="q"] {
+        box-shadow: inset 0 0 2px #ffcc00; /* Questionable → yellow glow */
+      }
+
+      .rating-button[data-rating="e"] {
+        box-shadow: inset 0 0 2px #ff3366; /* Explicit → red glow */
+      }
+
+      .rating-button[data-rating="all"] {
+        box-shadow: inset 0 0 2px #3399ff; /* All → blue glow */
+      }
+
+      /* Optional: lebih kuat kalau tombol aktif */
+      .rating-button.active {
+        background: var(--theme-accent);
+        box-shadow: inset 0 0 4px 1px currentColor;
+      }
+
+      .pagination {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        z-index: 1000;
+        background: var(--theme-card);
+        /*    backdrop-filter: blur(10px);*/
+        padding: 10px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+        align-items: center;
+      }
+
+      .page-button {
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: none;
+        background: var(--theme-bg-2);
+        color: var(--theme-text);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .page-button.active {
+        background: var(--theme-accent);
+        color: white;
+      }
+
+      .page-button:hover:not(.disabled) {
+        background: var(--theme-accent);
+        color: white;
+      }
+
+      .page-button.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      #theme-switcher {
+        position: fixed;
+        top: 18px;
+        left: 18px;
+        z-index: 10000;
+      }
+
+      #theme-toggle {
+        background: var(--theme-bg-1);
+        /*backdrop-filter: blur(8px);*/
+        border: none;
+        border-radius: 14px;
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        color: #e3e8f0;
+        cursor: pointer;
+        box-shadow: 0 2px 12px #0003;
+        transition: all 0.3s ease;
+      }
+
+      #theme-toggle:hover {
+        background: rgba(40, 50, 90, 0.7);
+      }
+
+      #theme-options {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: var(--theme-bg-2);
+        /*backdrop-filter: blur(12px);*/
+        border-radius: 14px;
+        padding: 10px 0;
+        margin-top: 8px;
+        box-shadow: 0 4px 24px #0006;
+        min-width: 180px;
+        overflow: hidden;
+      }
+
+      #theme-options div {
+        padding: 12px 20px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      #theme-options div:hover {
+        background: var(--theme-accent);
+      }
+
+      #theme-switcher:hover #theme-options {
+        display: block;
+      }
+
+      /* Default Theme */
+      :root {
+        --theme-bg-1: rgba(10, 20, 40, 0.5);
+        --theme-bg-2: rgba(26, 35, 126, 0.5);
+        --theme-text: #e3e8f0;
+        --theme-card: rgba(20, 30, 60, 0.253);
+        --theme-accent: #3949ab;
+      }
+
+      /* Deep Purple Theme */
+      .theme-deep-purple {
+        --theme-bg-1: rgba(30, 0, 50, 0.6);
+        --theme-bg-2: rgba(80, 0, 100, 0.5);
+        --theme-text: #f0e6ff;
+        --theme-card: rgba(40, 20, 60, 0.3);
+        --theme-accent: #7e57c2;
+      }
+
+      /* Emerald Night Theme */
+      .theme-emerald {
+        --theme-bg-1: rgba(10, 40, 20, 0.5);
+        --theme-bg-2: rgba(15, 80, 40, 0.5);
+        --theme-text: #e3f7e8;
+        --theme-card: rgba(20, 60, 30, 0.3);
+        --theme-accent: #2e7d32;
+      }
+
+      /* Crimson Dusk Theme */
+      .theme-crimson {
+        --theme-bg-1: rgba(50, 10, 10, 0.5);
+        --theme-bg-2: rgba(100, 20, 20, 0.5);
+        --theme-text: #ffe6e6;
+        --theme-card: rgba(60, 20, 20, 0.3);
+        --theme-accent: #c62828;
+      }
+
+      @media (max-width: 720px) {
+        body {
+          padding: 5px;
+        }
+        .container {
+          column-count: 2;
+          padding: 5px;
+          margin: 5px auto 0;
+          column-gap: 5px;
+        }
+        .main-wrapper {
+          flex-direction: column; /* stack vertically */
+          align-items: stretch;
+          padding: 0px;
+        }
+        .img-wrapper {
+          margin-bottom: 2px;
+          padding: 0;
+        }
+        .resolution-badge {
+          font-size: 10px;
+          padding: 5px 7px;
+        }
+        .image-tooltip {
+          font-size: 7px;
+          max-width: 150px;
+        }
+        .side {
+          width: 100%; /* sidebar full width */
+          position: relative; /* remove sticky on mobile */
+          top: unset;
+          margin-bottom: 15px; /* spacing before gallery */
+        }
+
+        .sider {
+          width: 100%;
+          margin-left: 0;
+          max-width: 100%;
+        }
+
+        .gallery-img {
+          margin-bottom: 5px;
+        }
+        h1 {
+          font-size: 28px;
+          margin-bottom: 5px;
+        }
+        .filter-row {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 1px;
+          margin-top: 30px;
+          margin-bottom: 10px;
+          flex-wrap: wrap; /* Add this to allow wrapping */
+          width: 100%; /* Ensure it takes full width */
+        }
+        .site-selector {
+          gap: 1px;
+        }
+        .site-button {
+          max-width: 0px;
+        }
+        .pagination {
+          width: 80%;
+          justify-content: space-between;
+        }
+        .switch {
+          width: 50px;
+          height: 28px;
+        }
+        .easter {
+          width: 50px;
+        }
+        .gallery-img {
+          box-shadow: 0 0px 0px #00000000;
+        }
+      }
+
+      @media (min-width: 1000px) and (max-width: 2000px) {
+        .container {
+          column-count: 3;
+        }
+      }
+      @media (min-width: 2000px) and (max-width: 2500px) {
+        .container {
+          column-count: 4;
+        }
+      }
+      @media (min-width: 2500px) {
+        .container {
+          column-count: 5;
+        }
+      }
+
+      /* Site selector */
+      .site-selector {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap; /* Add this to allow wrapping */
+        width: 100%; /* Ensure it takes full width */
+      }
+
+      .site-button {
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: none;
+        background: var(--theme-bg-2);
+        color: var(--theme-text);
+        cursor: pointer;
+        transition: all 0.2s;
+        flex: 1; /* Make buttons flexible */
+        min-width: 80px; /* Minimum width for each button */
+        max-width: 120px; /* Maximum width to prevent over-stretching */
+        text-align: center; /* Center the text */
+        white-space: nowrap; /* Prevent text wrapping */
+      }
+
+      .site-button.active {
+        background: var(--theme-accent);
+        color: white;
+      }
+
+      .site-button:hover {
+        background: var(--theme-accent);
+        color: white;
+      }
+      #wallpaper-overlay {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        z-index: 19999;
+        animation:
+          zoomIn 1.5s cubic-bezier(0.2, 0.8, 0.4, 1),
+          fadeOut 1s ease-in-out 1.3s forwards;
+      }
+      @keyframes zoomIn {
+        from {
+          transform: scale(1.2);
+        }
+        to {
+          transform: scale(1);
+        }
+      }
+
+      @keyframes fadeOut {
+        to {
+          opacity: 0;
+          filter: blur(10px);
+          z-index: -1;
+        }
+      }
+
+      /* Custom message box style */
+      .message-box {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--theme-card);
+        /*backdrop-filter: blur(10px);*/
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+        z-index: 20000;
+        display: none; /* Hidden by default */
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .message-box.visible {
+        display: flex;
+      }
+
+      .message-box-text {
+        margin-bottom: 15px;
+      }
+
+      .message-box-button {
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: none;
+        background: var(--theme-accent);
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .message-box-button:hover {
+        opacity: 0.9;
+      }
+
+      .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(
+          0,
+          0,
+          0,
+          0
+        ); /* Semi-transparent background for blending */
+        padding: 10px;
+        border-radius: 50%;
+        z-index: 10000;
+      }
+
+      .loading img {
+        width: 30px; /* Smaller size */
+        height: 30px;
+      }
+      #background-changer {
+        position: fixed;
+        top: 18px;
+        right: 18px;
+        z-index: 10000;
+        display: flex;
+        gap: 10px;
+      }
+
+      #background-changer button {
+        background: var(--theme-bg-1);
+        /*    backdrop-filter: blur(8px);*/
+        border: none;
+        border-radius: 14px;
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        color: #e3e8f0;
+        cursor: pointer;
+        box-shadow: 0 2px 12px #0003;
+        transition: all 0.3s ease;
+      }
+
+      #background-changer button:hover {
+        background: rgba(40, 50, 90, 0.7);
+      }
+      #pageInfob {
+        font-size: 12px; /* Adjust the size as needed */
+        font-weight: bold; /* Optional: Make it bold */
+        color: var(--theme-text); /* Optional: Ensure it matches the theme */
+      }
+      .image-tooltip {
+        position: fixed;
+        pointer-events: none;
+        background: rgba(20, 30, 60, 0.5);
+        color: #e3e8f0;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 12px;
+        max-width: 360px;
+        white-space: normal;
+        word-break: break-word;
+        z-index: 999999;
+        box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+        /*backdrop-filter: blur(5px); */
+        display: none;
+        line-height: 1.4;
+        border: 1px solid rgba(100, 120, 200, 0.3);
+      }
+      .video-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: var(--theme-bg-2);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 7.5px;
+        font-size: 15px;
+        font-weight: bold;
+        z-index: 4;
+        pointer-events: none;
+        transition:
+          transform 0.3s cubic-bezier(0.4, 2, 0.6, 1),
+          opacity 0.3s cubic-bezier(0.4, 2, 0.6, 1);
+        opacity: 1;
+        transform: scale(1);
+      }
+      .divider-text {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 20px 0;
+        color: var(--theme-text);
+        opacity: 0.8;
+      }
+      .divider-text::before,
+      .divider-text::after {
+        content: "";
+        flex: 1;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .divider-text:not(:empty)::before {
+        margin-right: 0.75em;
+      }
+      .divider-text:not(:empty)::after {
+        margin-left: 0.75em;
+      }
+      .easter {
+        position: fixed;
+        width: 50px;
+        /* height: 250px; */
+        border-radius: 50%;
+        object-fit: contain;
+        vertical-align: middle;
+        z-index: 999;
+        bottom: -5px;
+        right: -5px;
+      }
+      .easter img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: contain;
+        vertical-align: middle;
+        transition: transform 0.3s ease;
+      }
+      .easter img:hover {
+        transform: scale(1.05) translateY(-50px) translateX(-100px);
+      }
+      /* Tambahkan di dalam <style> */
+      .fancybox__container {
+        --fancybox-bg: rgba(10, 20, 40, 0.97);
+        --fancybox-color: #e3e8f0;
+      }
+
+      .fancybox__slide {
+        padding: 20px;
+      }
+
+      .fancybox__image {
+        max-width: 90vw !important;
+        max-height: 85vh !important;
+        object-fit: contain;
+        border-radius: 10px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        transition: opacity 0.3s ease;
+      }
+
+      .fancybox__caption {
+        background: rgba(20, 30, 60, 0.9);
+        color: #e3e8f0;
+        padding: 12px 20px;
+        font-size: 13px;
+        max-width: 70%;
+        margin: 15px auto 0;
+        border-radius: 12px;
+        text-align: center;
+        line-height: 1.5;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(100, 120, 200, 0.2);
+      }
+
+      .fancybox__toolbar {
+        background: rgba(20, 30, 60, 0);
+        padding: 12px 20px;
+        border-radius: 12px;
+        margin: 10px;
+      }
+
+      .fancybox__button {
+        background: rgba(57, 73, 171, 0.8);
+        border-radius: 8px;
+        transition: all 0.2s ease;
+      }
+
+      .fancybox__button:hover {
+        background: rgba(57, 73, 171, 1);
+        transform: scale(1.1);
+      }
+
+      .fancybox__button--close {
+        background: rgba(198, 40, 40, 0.8);
+      }
+
+      .fancybox__button--close:hover {
+        background: rgba(198, 40, 40, 1);
+      }
+
+      /* Video styling */
+      .fancybox__html5video {
+        max-width: 85vw;
+        max-height: 80vh;
+        border-radius: 10px;
+        background: #000;
+      }
+
+      /* Loading animation */
+      .fancybox__image:not([src]) {
+        background: linear-gradient(
+          90deg,
+          rgba(57, 73, 171, 0.1) 0%,
+          rgba(57, 73, 171, 0.2) 50%,
+          rgba(57, 73, 171, 0.1) 100%
+        );
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+      }
+
+      @keyframes loading {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+
+      /* Mobile optimization */
+      @media (max-width: 720px) {
+        .fancybox__image {
+          max-width: 95vw !important;
+          max-height: 80vh !important;
+        }
+
+        .fancybox__caption {
+          max-width: 90%;
+          font-size: 11px;
+          padding: 8px 12px;
+        }
+
+        .fancybox__toolbar {
+          padding: 8px 12px;
+          margin: 5px;
+        }
+      }
+      /* Video player styles */
+      .fancybox__html5video,
+      .fancybox__iframe {
+        border-radius: 10px;
+        background: #000;
+      }
+
+      .fancybox__html5video video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      /* Custom video controls */
+      .custom-video-player {
+        position: relative;
+        max-width: 90vw;
+        max-height: 85vh;
+        background: #000;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .custom-video-player video {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .custom-video-player .video-caption {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+        color: white;
+        padding: 20px 15px 10px;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="imageTooltip" class="image-tooltip"></div>
+    <div id="wallpaper-overlay"></div>
+    <div class="easter">
+      <img
+        src="https://i.ibb.co.com/rRY2tm4t/bf595082bdedd3d01c6cbc4d9a6384b9.png"
+        alt="jawa"
+        id="backgroundImage"
+      />
+    </div>
+    <div id="background-changer">
+      <button id="prev-background">&lt;</button>
+      <button id="next-background">&gt;</button>
+    </div>
+    <div
+      id="background-filename"
+      style="
+        text-align: center;
+        color: var(--theme-text);
+        margin-top: 5px;
+        font-size: 14px;
+      "
+    ></div>
+    <div id="theme-switcher">
+      <button id="theme-toggle">Theme ▼</button>
+      <div id="theme-options">
+        <div data-theme="default">Midnight Blue</div>
+        <div data-theme="deep-purple">Deep Purple</div>
+        <div data-theme="emerald">Emerald Night</div>
+        <div data-theme="crimson">Crimson Dusk</div>
+      </div>
+    </div>
+
+    <div class="main-wrapper">
+      <div class="side">
+        <h1>Image Search Gallery</h1>
+
+        <div class="search-container">
+          <div class="search-box">
+            <input
+              type="text"
+              class="search-input"
+              id="searchInput"
+              placeholder="Search tags..."
+            />
+            <div class="search-box-buttons">
+              <button class="search-button wide" id="searchButton">
+                <img
+                  src="https://img.icons8.com/?size=100&id=7695&format=png&color=ffffff"
+                  alt="Search"
+                  class="search-icon"
+                />
+              </button>
+              <button class="search-button" id="refreshButton">
+                <img
+                  src="https://img.icons8.com/?size=100&id=11682&format=png&color=ffffff"
+                  alt="Refresh"
+                  class="search-icon"
+                />
+              </button>
+            </div>
+          </div>
+          <div id="tagsContainer" class="tags-container"></div>
+          <div class="divider-text"><span>SITES</span></div>
+
+          <div class="site-selector">
+            <button class="site-button active" data-site="danbooru">
+              Danbooru
+            </button>
+            <button class="site-button" data-site="yandere">Yande.re</button>
+            <button class="site-button" data-site="gelbooru">Gelbooru</button>
+            <button class="site-button" data-site="kona">Konachan</button>
+          </div>
+          <div class="divider-text"><span>RATING</span></div>
+          <div class="filter-row">
+            <button class="rating-button" data-rating="g">General 🟦</button>
+            <button class="rating-button active" data-rating="s">
+              Safe ✅
+            </button>
+            <button class="rating-button" data-rating="q">Moderate ⚠️</button>
+            <button class="rating-button" data-rating="e">Explicit 🔞</button>
+            <button class="rating-button" data-rating="all">All 🌐</button>
+          </div>
+        </div>
+      </div>
+      <div class="sider">
+        <span id="pageInfoa">Page 1 of 1</span>
+        <div class="pagination" id="pagination">
+          <button class="page-button disabled" id="prevPage">&lt;</button>
+          <span id="pageInfob">Page 1 of 1</span>
+          <button class="page-button disabled" id="nextPage">&gt;</button>
+        </div>
+
+        <div class="container" id="imageContainer"></div>
+      </div>
+    </div>
+
+    <!-- Custom message box -->
+    <div id="messageBox" class="message-box">
+      <div id="messageText" class="message-box-text"></div>
+      <button id="messageCloseButton" class="message-box-button">OK</button>
+    </div>
+    <script>
+      // Background images and theme switching (preserved from your code)
+      const backgroundImages = [];
+
+      const max = 15;
+      const letters = ["", "a", "b", "c", "d", "e", "f", "g", "h"];
+
+      for (let i = 0; i < max; i++) {
+        const number = (i % 9) + 1;
+        const letter = letters[Math.floor(i / 9)];
+        backgroundImages.push(`./asset/bgs/${number}${letter}.webp`);
+      }
+
+      function preloadBackgroundImages() {
+        backgroundImages.forEach((url) => {
+          const img = new Image();
+          img.src = url;
+        });
+      }
+
+      function setRandomBackground() {
+        let randomImage;
+        do {
+          randomImage =
+            backgroundImages[
+              Math.floor(Math.random() * backgroundImages.length)
+            ];
+        } while (
+          randomImage === localStorage.getItem("lastBackground") &&
+          backgroundImages.length > 1
+        );
+
+        localStorage.setItem("lastBackground", randomImage);
+
+        const overlay = document.getElementById("wallpaper-overlay");
+        overlay.style.backgroundImage = `url('${randomImage}')`;
+        document.body.style.backgroundImage = `
+                linear-gradient(135deg, rgba(10,20,40,0.5) 0%, rgba(26,35,126,0.5) 100%),
+                url('${randomImage}')
+            `;
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        preloadBackgroundImages();
+        setRandomBackground();
+        loadTags();
+
+        // Set random API page on initial load
+        apiPage = Math.floor(Math.random() * 100) + 1;
+
+        const themeOptions = document.querySelectorAll("#theme-options div");
+        const savedTheme = localStorage.getItem("theme") || "default";
+
+        document.body.classList.add(`theme-${savedTheme}`);
+
+        themeOptions.forEach((option) => {
+          option.addEventListener("click", () => {
+            const theme = option.getAttribute("data-theme");
+
+            document.body.classList.remove(
+              "theme-default",
+              "theme-deep-purple",
+              "theme-emerald",
+              "theme-crimson",
+            );
+
+            if (theme !== "default") {
+              document.body.classList.add(`theme-${theme}`);
+            }
+
+            localStorage.setItem("theme", theme);
+          });
+        });
+        // Also perform a rating-only Danbooru request on every page load/refresh
+        loadReq();
+      });
+
+      // Global variables for the search functionality
+      let currentPage = 1;
+      let totalPages = 1;
+      let currentSite = "danbooru"; // Adjusted to Danbooru as a default based on the API request you mentioned
+      let currentRating = "g"; // Default rating
+      let searchResults = [];
+
+      // Extra state
+      let apiPage = 1; // API page (fetches 100 results each)
+      let webPage = 1; // Local subpage (1–5 within the 100 results)
+      let resultsPerPage = 50;
+
+      // DOM elements
+      const searchInput = document.getElementById("searchInput");
+      const searchButton = document.getElementById("searchButton");
+      const refreshButton = document.getElementById("refreshButton");
+      const tagsContainer = document.getElementById("tagsContainer");
+      const imageContainer = document.getElementById("imageContainer");
+      const prevPageButton = document.getElementById("prevPage");
+      const nextPageButton = document.getElementById("nextPage");
+      const pageInfoa = document.getElementById("pageInfoa");
+      const pageInfob = document.getElementById("pageInfob");
+      const siteButtons = document.querySelectorAll(".site-button");
+      const ratingButtons = document.querySelectorAll(".rating-button");
+      const messageBox = document.getElementById("messageBox");
+      const messageText = document.getElementById("messageText");
+      const messageCloseButton = document.getElementById("messageCloseButton");
+
+      // Show custom message box
+      function showMessage(message) {
+        messageText.textContent = message;
+        messageBox.classList.add("visible");
+      }
+
+      // Debounce function to limit API requests
+      function debounce(func, delay) {
+        let timeout;
+        return function (...args) {
+          const context = this;
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(context, args), delay);
+        };
+      }
+
+      // Function to fetch tag suggestions
+      let allTags = []; // Cache loaded tags
+
+      // Load tags.json once at startup
+      async function loadTags() {
+        try {
+          const response = await fetch("./tags.json");
+          if (!response.ok) throw new Error("Failed to load tags.json");
+          const data = await response.json();
+
+          // Validate structure
+          if (!Array.isArray(data))
+            throw new Error("tags.json is not an array");
+          allTags = data.filter(
+            (tag) =>
+              tag && typeof tag === "object" && tag.name && tag.post_count,
+          );
+          window.tagMap = {};
+          allTags.forEach((tag) => {
+            window.tagMap[tag.name] = tag.post_count;
+          });
+          console.log(`Loaded ${allTags.length} valid tags`);
+        } catch (error) {
+          console.error("Error loading tags:", error);
+          allTags = []; // Fallback to empty array
+        }
+      }
+
+      // Filter tags locally (no API calls)
+      function fetchTags(searchTerm) {
+        if (
+          !searchTerm ||
+          typeof searchTerm !== "string" ||
+          searchTerm.trim().length < 1
+        ) {
+          return [];
+        }
+
+        const term = searchTerm.trim();
+        const lastWord = term.split(" ").pop();
+
+        return (
+          allTags
+            // First filter: Ensure we only work with valid tag objects
+            .filter((tag) => {
+              return (
+                tag &&
+                typeof tag === "object" &&
+                tag.name &&
+                typeof tag.name === "string"
+              );
+            })
+            // Second filter: Actual search matching
+            .filter((tag) => tag.name.includes(lastWord))
+            .sort((a, b) => b.post_count - a.post_count)
+            .slice(0, 20)
+            .map((tag) => tag.name)
+        );
+      }
+
+      // Show tag suggestions
+      function showTagSuggestions(suggestions) {
+        tagsContainer.innerHTML = "";
+
+        suggestions.forEach((tag) => {
+          const tagElement = document.createElement("div");
+          tagElement.className = "tag";
+          tagElement.textContent = tag;
+          tagElement.addEventListener("click", () => fillSearchBar(tag));
+          tagsContainer.appendChild(tagElement);
+        });
+      }
+
+      // Fill search bar with clicked tag
+      function fillSearchBar(tag) {
+        const currentTags = searchInput.value.trim().split(" ");
+        if (
+          currentTags.length > 0 &&
+          currentTags[currentTags.length - 1] !== ""
+        ) {
+          currentTags[currentTags.length - 1] = tag;
+          searchInput.value = currentTags.join(" ") + " ";
+        } else {
+          searchInput.value += tag + " ";
+        }
+        searchInput.focus();
+        tagsContainer.innerHTML = ""; // Hide suggestions after selection
+      }
+      // Perform search function
+      async function performSearch() {
+        webPage = 1; // reset slice
+        // use apiPage for the &page= (Danbooru/Yande.re/etc.)
+        const tags = searchInput.value
+          .trim()
+          .split(" ")
+          .filter((t) => t);
+        if (tags.length === 0) {
+          showMessage("Please enter at least one tag.");
+          return;
+        }
+
+        imageContainer.innerHTML =
+          '<div class="loading"><img src="./asset/loading.svg" alt="Loading..." /></div>';
+
+        try {
+          // Build the tags array conditionally
+          let searchTags = [...tags];
+
+          // Only add rating filter if it's not "all"
+          if (currentRating !== "all") {
+            searchTags.push(`rating:${currentRating}`);
+          }
+
+          const apiEndpoints = {
+            danbooru: `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
+              searchTags.join(" "),
+            )}&page=${apiPage}&limit=100`,
+            yandere: `https://yande.re/post.json?tags=${encodeURIComponent(
+              searchTags.join(" "),
+            )}&page=${apiPage}&limit=100`,
+            gelbooru: `https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags=${encodeURIComponent(
+              searchTags.join(" "),
+            )}&pid=${
+              apiPage - 1
+            }&limit=100&api_key=ceea44488795b1cc07ecaa6102e923f9599e279b86553c59a0936a126a92a381c6290893894f5ebe752584d148523738317d56c90dd39cb84b5bcb647b9d3f1e&user_id=1937005`,
+            kona: `https://konachan.net/post.json?tags=${encodeURIComponent(
+              searchTags.join(" "),
+            )}&limit=100&page=${apiPage}`,
+          };
+
+          const apiUrl = apiEndpoints[currentSite];
+          if (!apiUrl) {
+            throw new Error("Invalid site selected");
+          }
+
+          const proxyUrl = `https://api-olive-gamma.vercel.app/api/proxy?url=${encodeURIComponent(
+            apiUrl,
+          )}`;
+          const response = await fetch(proxyUrl);
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          let rawResults = await response.json();
+
+          searchResults = normalizeResults(rawResults, currentSite);
+          searchResults.sort((a, b) => {
+            const scoreA = a.score || 0;
+            const scoreB = b.score || 0;
+            return scoreB - scoreA;
+          });
+
+          renderImages();
+          updatePagination();
+        } catch (error) {
+          console.error("Search error:", error);
+          imageContainer.innerHTML =
+            '<div class="error">Error searching images. Please try again.</div>';
+          showMessage("Search failed: " + error.message);
+        }
+      }
+      refreshButton.addEventListener("click", () => {
+        // Randomize API page between 1 and 100
+        apiPage = Math.floor(Math.random() * 20) + 1;
+        webPage = 1;
+
+        // If there's a search query, perform search with random page
+        if (searchInput.value.trim()) {
+          performSearch();
+        } else {
+          // If no search query, load random posts like initial load
+          loadReq();
+        }
+      });
+      // Normalize results from different booru APIs
+      function normalizeResults(results, site) {
+        switch (site) {
+          case "danbooru":
+            return results.map((post) => ({
+              id: post.id,
+              file_url: post.file_url,
+              preview_url:
+                post.preview_file_url || post.large_file_url || post.file_url,
+              sample_url: post.large_file_url || post.file_url,
+              image_width: post.image_width,
+              image_height: post.image_height,
+              tags: post.tag_string,
+              rating: post.rating,
+              score: post.score,
+              duration: post.media_asset.duration,
+            }));
+
+          case "yandere":
+            return results.map((post) => ({
+              id: post.id,
+              file_url: post.file_url,
+              preview_url: post.preview_url || post.sample_url || post.file_url,
+              sample_url: post.sample_url || post.file_url,
+              image_width: post.width,
+              image_height: post.height,
+              tags: post.tags,
+              rating: post.rating,
+              score: post.score,
+            }));
+
+          case "gelbooru":
+            // Gelbooru returns an object with a 'post' property containing the array
+            const posts = results.post || [];
+            return posts.map((post) => ({
+              id: post.id,
+              file_url: post.file_url,
+              preview_url: post.preview_url || post.sample_url || post.file_url,
+              sample_url: post.sample_url || post.file_url,
+              image_width: post.width,
+              image_height: post.height,
+              tags: post.tags,
+              rating: post.rating,
+              score: post.score,
+            }));
+          case "kona":
+            return results.map((post) => ({
+              id: post.id,
+              file_url: post.file_url,
+              preview_url: post.preview_url || post.sample_url || post.file_url,
+              sample_url: post.sample_url || post.file_url,
+              image_width: post.width,
+              image_height: post.height,
+              tags: post.tags,
+              rating: post.rating,
+              score: post.score,
+            }));
+          default:
+            return [];
+        }
+      }
+      function getPreviewUrl(post) {
+        // Danbooru
+        if (post.sample_url) {
+          return post.sample_url;
+        }
+        // Yande.re
+        else if (post.sample_url) {
+          return post.sample_url;
+        }
+        // Gelbooru/Safebooru
+        else if (post.preview_url) {
+          return post.sample_url;
+        }
+        // Konachan
+        else if (post.preview_url) {
+          return post.preview_url;
+        }
+        // Fallback to full URL if no preview available
+        return post.file_url;
+      }
+
+      // Render images in the container
+      function renderImages() {
+        imageContainer.innerHTML = "";
+
+        if (searchResults.length === 0) {
+          imageContainer.innerHTML =
+            '<div class="error">No results found</div>';
+          return;
+        }
+
+        const start = (webPage - 1) * resultsPerPage;
+        const end = start + resultsPerPage;
+        const slice = searchResults.slice(start, end);
+
+        slice.forEach((post) => {
+          const imgWrapper = document.createElement("div");
+          imgWrapper.className = "img-wrapper";
+
+          // Check if the file is a video
+          const isVideo =
+            post.file_url &&
+            (post.file_url.endsWith(".mp4") ||
+              post.file_url.endsWith(".webm") ||
+              post.file_url.includes("video"));
+
+          // Determine the preview URL based on file type and site
+          let previewUrl = "";
+          if (isVideo) {
+            if (currentSite === "gelbooru") {
+              previewUrl = post.preview_url;
+            } else if (currentSite === "danbooru") {
+              previewUrl = post.preview_url;
+            }
+          } else {
+            previewUrl =
+              currentSite === "yandere"
+                ? post.preview_url
+                : post.sample_url || post.preview_url || post.file_url;
+          }
+
+          const fullUrl = post.file_url;
+
+          let resolutionBadge = "";
+          if (post.image_width && post.image_height) {
+            const maxDim = Math.max(post.image_width, post.image_height);
+            if (maxDim >= 8000) resolutionBadge = "8K";
+            else if (maxDim >= 6000) resolutionBadge = "6K";
+            else if (maxDim >= 5000) resolutionBadge = "5K";
+            else if (maxDim >= 4000) resolutionBadge = "4K";
+            else if (maxDim >= 3000) resolutionBadge = "3K";
+            else if (maxDim >= 2000) resolutionBadge = "2K";
+            else if (maxDim >= 1000) resolutionBadge = "1K";
+            if (resolutionBadge)
+              resolutionBadge = `<div class="resolution-badge">${resolutionBadge}</div>`;
+          }
+
+          function formatDuration(seconds) {
+            if (!seconds || seconds <= 0) return "0:00";
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}:${secs.toString().padStart(2, "0")}`;
+          }
+
+          // Kemudian di renderImages, ganti bagian videoBadge:
+          const videoBadge =
+            isVideo && post.duration
+              ? `<div class="video-badge">${formatDuration(
+                  post.duration,
+                )}</div>`
+              : "";
+          imgWrapper.innerHTML = `
+                    ${resolutionBadge}
+                    ${videoBadge}
+                    <div class="img-skeleton" data-id="${post.id}"></div>
+                    <img src="${previewUrl}" 
+                        alt="Search result" 
+                        class="gallery-img" 
+                        loading="lazy" 
+                        style="opacity:0;" 
+                        data-id="${post.id}" 
+                        data-full-url="${fullUrl}"
+                        data-tags="${post.tags}"
+                        data-is-video="${isVideo}">
+                `;
+
+          imageContainer.appendChild(imgWrapper);
+
+          const img = imgWrapper.querySelector("img");
+          img.addEventListener("load", function () {
+            this.style.opacity = "1";
+            imgWrapper.querySelector(".img-skeleton")?.remove();
+          });
+          const tooltip = document.getElementById("imageTooltip");
+
+          imageContainer.querySelectorAll(".gallery-img").forEach((img) => {
+            img.addEventListener("mouseenter", function (e) {
+              const allTags = this.dataset.tags
+                ? this.dataset.tags.split(" ")
+                : [];
+              const MAX_TAGS_TO_SHOW = 20;
+
+              // Sort tags by post count using the pre-cached map
+              const sortedTags = [...allTags].sort((a, b) => {
+                const countA = window.tagMap[a] || 0;
+                const countB = window.tagMap[b] || 0;
+                return countB - countA; // Descending order
+              });
+
+              const limitedTags = sortedTags.slice(0, MAX_TAGS_TO_SHOW);
+
+              // Create a more visually appealing display
+              const tooltip = document.getElementById("imageTooltip");
+              tooltip.innerHTML = `
+                            <div style="max-height: 500px; overflow-y: auto; padding: 4px;">
+                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                    ${limitedTags
+                                      .map(
+                                        (tag) =>
+                                          `<span style="display: inline-block;
+                                                    background: rgba(120, 140, 220, 0.25);
+                                                    color: #e3e8f0;
+                                                    padding: 3px 6px;
+                                                    border-radius: 4px;
+                                                    font-size: inherit;
+                                                    border: 1px solid rgba(255, 255, 255, 0.1);">
+                                            ${tag}
+                                        </span>`,
+                                      )
+                                      .join("")}
+                                </div>
+                                ${
+                                  allTags.length > MAX_TAGS_TO_SHOW
+                                    ? `<div style="margin-top: 6px; font-style: italic; font-size: 11px; color: #a0a8c0;">
+                                        +${
+                                          allTags.length - MAX_TAGS_TO_SHOW
+                                        } more tags
+                                    </div>`
+                                    : ""
+                                }
+                            </div>
+                        `;
+              tooltip.style.display = "block";
+            });
+            img.addEventListener("mousemove", function (e) {
+              const tooltip = document.getElementById("imageTooltip");
+              tooltip.style.left = e.clientX + 15 + "px";
+              tooltip.style.top = e.clientY + 15 + "px";
+            });
+
+            img.addEventListener("mouseleave", function () {
+              const tooltip = document.getElementById("imageTooltip");
+              tooltip.style.display = "none";
+            });
+          });
+
+          imgWrapper.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            /// Sembunyikan tombol background changer dan theme switcher
+            const backgroundChanger =
+              document.getElementById("background-changer");
+            const themeSwitcher = document.getElementById("theme-switcher");
+            const pagination = document.getElementById("pagination");
+
+            if (backgroundChanger) backgroundChanger.style.display = "none";
+            if (themeSwitcher) themeSwitcher.style.display = "none";
+            if (pagination) pagination.style.display = "none";
+
+            // Periksa apakah ini video
+            const isVideo =
+              post.file_url &&
+              (post.file_url.endsWith(".mp4") ||
+                post.file_url.endsWith(".webm") ||
+                post.file_url.includes("video"));
+
+            // Untuk video, gunakan URL langsung dari API
+            const mediaUrl = fullUrl;
+
+            // Tentukan type berdasarkan ekstensi file
+            let mediaType = "image";
+            if (isVideo) {
+              if (mediaUrl.endsWith(".mp4")) {
+                mediaType = "video";
+              } else if (mediaUrl.endsWith(".webm")) {
+                mediaType = "video";
+              } else {
+                // Fallback untuk video yang tidak jelas ekstensinya
+                mediaType = "html5video";
+              }
+            }
+
+            // Setup Fancybox options berdasarkan type
+            const fancyboxOptions = {
+              infinite: false,
+              Toolbar: {
+                display: {
+                  left: [],
+                  middle: [],
+                  right: ["close"],
+                },
+              },
+              Thumbs: false,
+              preload: 0,
+              on: {
+                init: (fancybox) => {
+                  console.log("Fancybox initialized for:", mediaType, mediaUrl);
+                },
+                destroy: (fancybox) => {
+                  // Tampilkan kembali tombol-tombol yang disembunyikan
+                  if (backgroundChanger)
+                    backgroundChanger.style.display = "flex";
+                  if (themeSwitcher) themeSwitcher.style.display = "block";
+                  if (pagination) pagination.style.display = "flex";
+                },
+              },
+            };
+
+            // Konfigurasi khusus untuk video
+            if (isVideo) {
+              fancyboxOptions.Video = {
+                autoStart: false,
+                showControls: true,
+                preload: "auto",
+                volume: 1,
+                speed: 1,
+                loop: false,
+                mute: false,
+                hideControls: false,
+              };
+            } else {
+              fancyboxOptions.Images = {
+                zoom: true,
+                initialSize: "fit",
+              };
+            }
+
+            // Buat array media untuk Fancybox
+            const mediaItems = [
+              {
+                src: mediaUrl,
+                type: mediaType,
+                caption: post.tags
+                  ? `Tags: ${post.tags.split(" ").slice(0, 15).join(", ")}...`
+                  : "",
+                // Untuk video, tambahkan atribut HTML5
+                ...(isVideo && {
+                  html5video: {
+                    preload: "auto",
+                    controls: true,
+                    autoplay: false,
+                  },
+                }),
+              },
+            ];
+
+            // Coba pendekatan berbeda untuk video
+            if (isVideo) {
+              // Pendekatan 1: Gunakan iframe
+              Fancybox.show(
+                [
+                  {
+                    src: mediaUrl,
+                    type: "html5video",
+                    caption: post.tags
+                      ? `Tags: ${post.tags
+                          .split(" ")
+                          .slice(0, 15)
+                          .join(", ")}...`
+                      : "",
+                    html5video: {
+                      preload: true,
+                      attr: {
+                        allow: "autoplay",
+                        allowfullscreen: true,
+                      },
+                    },
+                  },
+                ],
+                fancyboxOptions,
+              );
+            } else {
+              // Untuk gambar, gunakan cara biasa
+              Fancybox.show(mediaItems, fancyboxOptions);
+            }
+          });
+        });
+      }
+
+      // Update pagination info
+      function updatePagination() {
+        const totalWebPages =
+          Math.ceil(searchResults.length / resultsPerPage) || 1;
+        pageInfoa.textContent = `API Page ${apiPage}`;
+        pageInfob.textContent = `${webPage} of ${totalWebPages}`;
+
+        prevPageButton.disabled = webPage <= 1 && apiPage <= 1;
+        nextPageButton.disabled =
+          webPage >= totalWebPages && searchResults.length < 100;
+
+        if (webPage <= 1 && apiPage <= 1) {
+          prevPageButton.classList.add("disabled");
+        } else {
+          prevPageButton.classList.remove("disabled");
+        }
+
+        if (webPage >= totalWebPages && searchResults.length < 100) {
+          nextPageButton.classList.add("disabled");
+        } else {
+          nextPageButton.classList.remove("disabled");
+        }
+      }
+
+      // Event Listeners
+      const debouncedFetchTags = debounce(async function (e) {
+        const lastWord = e.target.value.trim().split(" ").pop();
+        if (lastWord && lastWord.length > 1) {
+          const suggestions = await fetchTags(lastWord);
+          showTagSuggestions(suggestions);
+        } else {
+          tagsContainer.innerHTML = "";
+        }
+      }, 500);
+
+      searchInput.addEventListener("input", debouncedFetchTags);
+
+      searchButton.addEventListener("click", () => {
+        webPage = 1;
+        apiPage = 1;
+        performSearch();
+      });
+
+      prevPageButton.addEventListener("click", () => {
+        if (webPage > 1) {
+          webPage--;
+          renderImages();
+          updatePagination();
+        } else if (apiPage > 1) {
+          apiPage--;
+          webPage = 1;
+          performSearch();
+        }
+      });
+
+      nextPageButton.addEventListener("click", () => {
+        const totalWebPages = Math.ceil(searchResults.length / resultsPerPage);
+        if (webPage < totalWebPages) {
+          webPage++;
+          renderImages();
+          updatePagination();
+        } else {
+          apiPage++;
+          webPage = 1;
+          performSearch();
+        }
+      });
+
+      // Site selector
+      // Site selector
+      siteButtons.forEach((button) => {
+        button.addEventListener("click", function () {
+          siteButtons.forEach((btn) => btn.classList.remove("active"));
+          this.classList.add("active");
+          currentSite = this.dataset.site;
+          if (searchInput.value.trim()) {
+            webPage = 1;
+            performSearch();
+          }
+        });
+      });
+
+      // Rating selector
+      ratingButtons.forEach((button) => {
+        button.addEventListener("click", function () {
+          ratingButtons.forEach((btn) => btn.classList.remove("active"));
+          this.classList.add("active");
+          currentRating = this.dataset.rating;
+          if (searchInput.value.trim()) {
+            webPage = 1;
+            performSearch();
+          }
+        });
+      });
+
+      messageCloseButton.addEventListener("click", () => {
+        messageBox.classList.remove("visible");
+      });
+      // New: fetch Danbooru posts with only the rating tag (runs on page load)
+      async function loadReq() {
+        try {
+          // Ensure we query Danbooru and use the current apiPage (which gets randomized)
+          currentSite = "danbooru";
+
+          // Build tags conditionally based on current rating
+          let tags = "-furry+-futanari";
+          if (currentRating !== "all") {
+            tags += `+rating:${currentRating}`;
+          } else {
+            tags += "+rating:g"; // Default to general rating for initial load
+          }
+
+          const apiUrl = `https://danbooru.donmai.us/posts.json?tags=${tags}&page=${apiPage}&limit=100`;
+          const proxyUrl = `https://api-olive-gamma.vercel.app/api/proxy?url=${encodeURIComponent(
+            apiUrl,
+          )}`;
+
+          const response = await fetch(proxyUrl);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const rawResults = await response.json();
+
+          // Normalize, sort and render like the regular flow
+          searchResults = normalizeResults(rawResults, "danbooru");
+          searchResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+          renderImages();
+          updatePagination();
+        } catch (error) {
+          console.error("Danbooru initial fetch failed:", error);
+        }
+      }
+      let currentBackgroundIndex = 0;
+
+      function changeBackground(direction) {
+        if (direction === "next") {
+          currentBackgroundIndex =
+            (currentBackgroundIndex + 1) % backgroundImages.length;
+        } else if (direction === "prev") {
+          currentBackgroundIndex =
+            (currentBackgroundIndex - 1 + backgroundImages.length) %
+            backgroundImages.length;
+        }
+
+        const newBackground = backgroundImages[currentBackgroundIndex];
+        localStorage.setItem("lastBackground", newBackground);
+
+        const overlay = document.getElementById("wallpaper-overlay");
+        overlay.style.backgroundImage = `url('${newBackground}')`;
+        overlay.style.animation =
+          "zoomIn 1.5s cubic-bezier(0.2, 0.8, 0.4, 1), fadeOut 1s ease-in-out 1.3s forwards";
+
+        document.body.style.backgroundImage = `
+                linear-gradient(135deg, rgba(10,20,40,0.5) 0%, rgba(26,35,126,0.5) 100%),
+                url('${newBackground}')
+            `;
+
+        // Update the background file name
+        const backgroundFilename = newBackground.split("/").pop(); // Extract the file name
+        document.getElementById("background-filename").textContent =
+          `Background: ${backgroundFilename}`;
+      }
+
+      // Event listeners for the buttons
+      document
+        .getElementById("prev-background")
+        .addEventListener("click", () => changeBackground("prev"));
+      document
+        .getElementById("next-background")
+        .addEventListener("click", () => changeBackground("next"));
+
+      // Initialize the file name on page load
+      document.addEventListener("DOMContentLoaded", () => {
+        const initialBackground = backgroundImages[currentBackgroundIndex];
+        const initialFilename = initialBackground.split("/").pop();
+        document.getElementById("background-filename").textContent =
+          `Background: ${initialFilename}`;
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+  </body>
+</html>
