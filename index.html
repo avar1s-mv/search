@@ -634,6 +634,37 @@
           box-shadow 0.35s ease;
         will-change: transform;
       }
+      /* External-link sites (Gelbooru, Yandere): show alias cursor */
+      .img-wrapper.is-external {
+        cursor: alias;
+      }
+      /* Small "↗" badge shown on hover for external sites */
+      .img-wrapper.is-external::after {
+        content: "↗";
+        position: absolute;
+        bottom: 7px;
+        right: 7px;
+        z-index: 5;
+        background: rgba(8, 14, 30, 0.72);
+        backdrop-filter: blur(6px);
+        color: var(--text);
+        border: 1px solid var(--border);
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s;
+        pointer-events: none;
+        line-height: 24px;
+        text-align: center;
+      }
+      .img-wrapper.is-external:hover::after {
+        opacity: 1;
+      }
       .img-wrapper:hover {
         transform: scale(1.03) translateY(-4px);
         box-shadow:
@@ -1456,6 +1487,7 @@
             file_url: p.file_url,
             preview_url: p.preview_url || p.sample_url || p.file_url,
             sample_url: p.sample_url || p.file_url,
+            source_url: `https://gelbooru.com/index.php?page=post&s=view&id=${p.id}`,
             image_width: p.width,
             image_height: p.height,
             tags: p.tags,
@@ -1467,6 +1499,8 @@
           file_url: p.file_url,
           preview_url: p.preview_url || p.sample_url || p.file_url,
           sample_url: p.sample_url || p.file_url,
+          source_url:
+            site === "yandere" ? `https://yande.re/post/show/${p.id}` : null,
           image_width: p.width,
           image_height: p.height,
           tags: p.tags,
@@ -1518,7 +1552,8 @@
           }
 
           const wrap = document.createElement("div");
-          wrap.className = "img-wrapper";
+          wrap.className =
+            "img-wrapper" + (post.source_url ? " is-external" : "");
 
           let resBadge = "";
           if (post.image_width && post.image_height) {
@@ -1602,9 +1637,16 @@
             });
           }
 
-          // Click → Fancybox
+          // Click → open source page (Gelbooru/Yandere) or Fancybox (others)
           wrap.addEventListener("click", (e) => {
             e.preventDefault();
+
+            // Gelbooru & Yandere: go directly to the post page on the source site
+            if (post.source_url) {
+              window.open(post.source_url, "_blank", "noopener,noreferrer");
+              return;
+            }
+
             const rawFullUrl = post.file_url;
             // For Gelbooru: proxy the full-size image URL too, to bypass hotlink protection
             const fullUrl =
@@ -1622,6 +1664,15 @@
               Thumbs: false,
               preload: 0,
               on: {
+                // Fix: move focus out of the container BEFORE Fancybox sets
+                // aria-hidden="true" during the closing animation, which would
+                // trap focus inside a hidden element and trigger a browser warning.
+                closing: (fancybox) => {
+                  const container = fancybox.container;
+                  if (container && container.contains(document.activeElement)) {
+                    document.activeElement.blur();
+                  }
+                },
                 destroy: () => {
                   document.getElementById("background-changer").style.display =
                     "";
