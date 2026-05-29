@@ -1458,24 +1458,6 @@
       }
 
       /* ─── Search ─── */
-
-      // Rating values differ per site:
-      // Danbooru:  g / s / q / e
-      // Yande.re & Konachan: s / q / e  (no "g"; safest = "s")
-      // Gelbooru:  general / safe / questionable / explicit
-      const RATING_MAP = {
-        danbooru: { g: "g", s: "s", q: "q", e: "e" },
-        yandere: { g: "s", s: "s", q: "q", e: "e" },
-        kona: { g: "s", s: "s", q: "q", e: "e" },
-        gelbooru: { g: "general", s: "safe", q: "questionable", e: "explicit" },
-      };
-
-      function buildTagsForSite(baseTags, site) {
-        if (currentRating === "all") return [...baseTags];
-        const mapped = RATING_MAP[site]?.[currentRating] ?? currentRating;
-        return [...baseTags, `rating:${mapped}`];
-      }
-
       async function performSearch() {
         const tags = searchInput.value.trim().split(" ").filter(Boolean);
         if (!tags.length) {
@@ -1487,32 +1469,28 @@
           '<div class="loading"><img src="./asset/loading.svg" alt="Loading…" /></div>';
 
         try {
+          let searchTags = [...tags];
+          if (currentRating !== "all")
+            searchTags.push(`rating:${currentRating}`);
+
+          const endpoints = {
+            danbooru: `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(searchTags.join(" "))}&page=${apiPage}&limit=100`,
+            yandere: `https://yande.re/post.json?tags=${encodeURIComponent(searchTags.join(" "))}&page=${apiPage}&limit=100`,
+            gelbooru: `https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags=${encodeURIComponent(searchTags.join(" "))}&pid=${apiPage - 1}&limit=100&api_key=ceea44488795b1cc07ecaa6102e923f9599e279b86553c59a0936a126a92a381c6290893894f5ebe752584d148523738317d56c90dd39cb84b5bcb647b9d3f1e&user_id=1937005`,
+            kona: `https://konachan.net/post.json?tags=${encodeURIComponent(searchTags.join(" "))}&limit=100&page=${apiPage}`,
+          };
+
           const sitesToFetch = [...selectedSites];
           const isMulti = sitesToFetch.length > 1;
 
-          // Build per-site endpoints with correctly-mapped rating tags
-          const endpoints = {
-            danbooru: (t) =>
-              `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(t.join(" "))}&page=${apiPage}&limit=100`,
-            yandere: (t) =>
-              `https://yande.re/post.json?tags=${encodeURIComponent(t.join(" "))}&page=${apiPage}&limit=100`,
-            gelbooru: (t) =>
-              `https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags=${encodeURIComponent(t.join(" "))}&pid=${apiPage - 1}&limit=100&api_key=ceea44488795b1cc07ecaa6102e923f9599e279b86553c59a0936a126a92a381c6290893894f5ebe752584d148523738317d56c90dd39cb84b5bcb647b9d3f1e&user_id=1937005`,
-            kona: (t) =>
-              `https://konachan.net/post.json?tags=${encodeURIComponent(t.join(" "))}&limit=100&page=${apiPage}`,
-          };
-
           // Fetch all selected sites in parallel
           const results = await Promise.allSettled(
-            sitesToFetch.map((site) => {
-              const siteTags = buildTagsForSite(tags, site);
-              return fetchWithFallback(endpoints[site](siteTags), site).then(
-                (raw) => ({
-                  site,
-                  posts: normalizeResults(raw, site),
-                }),
-              );
-            }),
+            sitesToFetch.map((site) =>
+              fetchWithFallback(endpoints[site], site).then((raw) => ({
+                site,
+                posts: normalizeResults(raw, site),
+              })),
+            ),
           );
 
           let merged = [];
