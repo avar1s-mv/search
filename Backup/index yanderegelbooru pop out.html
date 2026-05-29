@@ -554,58 +554,12 @@
         cursor: pointer;
         transition: all 0.2s;
         text-align: center;
-        position: relative;
-        user-select: none;
       }
+      .site-button.active,
       .site-button:hover {
-        border-color: var(--accent);
-        color: var(--accent);
-      }
-      .site-button.active {
         background: var(--accent);
         color: #fff;
         border-color: var(--accent);
-        box-shadow: 0 0 0 2px var(--accent-glow);
-      }
-      .site-button.active::after {
-        content: "✓";
-        position: absolute;
-        top: 3px;
-        right: 5px;
-        font-size: 9px;
-        opacity: 0.85;
-      }
-      /* multi-source hint label */
-      #multi-source-hint {
-        font-size: 10px;
-        color: var(--text-muted);
-        text-align: center;
-        margin-top: 4px;
-        transition: opacity 0.2s;
-      }
-      /* site badge on each image card */
-      .site-badge {
-        position: absolute;
-        bottom: 7px;
-        left: 7px;
-        z-index: 5;
-        background: rgba(8, 14, 30, 0.78);
-        backdrop-filter: blur(6px);
-        color: var(--text);
-        border: 1px solid var(--border);
-        padding: 2px 7px;
-        border-radius: 6px;
-        font-family: var(--font-display);
-        font-size: 10px;
-        font-weight: 700;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.2s;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-      }
-      .img-wrapper:hover .site-badge {
-        opacity: 1;
       }
 
       /* Rating buttons */
@@ -1140,7 +1094,6 @@
           </button>
           <button class="site-button" data-site="kona">Konachan</button>
         </div>
-        <div id="multi-source-hint">Tap multiple sites to merge results</div>
 
         <div class="s-divider">Rating</div>
         <div class="filter-row">
@@ -1311,8 +1264,8 @@
       });
 
       /* ─── State ─── */
-      let selectedSites = new Set(["danbooru"]);
-      let currentRating = "g";
+      let currentSite = "danbooru",
+        currentRating = "g";
       let searchResults = [],
         apiPage = 1,
         webPage = 1,
@@ -1480,52 +1433,14 @@
             kona: `https://konachan.net/post.json?tags=${encodeURIComponent(searchTags.join(" "))}&limit=100&page=${apiPage}`,
           };
 
-          const sitesToFetch = [...selectedSites];
-          const isMulti = sitesToFetch.length > 1;
-
-          // Fetch all selected sites in parallel
-          const results = await Promise.allSettled(
-            sitesToFetch.map((site) =>
-              fetchWithFallback(endpoints[site], site).then((raw) => ({
-                site,
-                posts: normalizeResults(raw, site),
-              })),
-            ),
+          const raw = await fetchWithFallback(
+            endpoints[currentSite],
+            currentSite,
           );
 
-          let merged = [];
-          const seenKeys = new Set();
-
-          results.forEach((r) => {
-            if (r.status === "fulfilled") {
-              r.value.posts.forEach((post) => {
-                // Deduplicate by file_url; tag source site on each post
-                const key = post.file_url || `${r.value.site}-${post.id}`;
-                if (!seenKeys.has(key)) {
-                  seenKeys.add(key);
-                  merged.push({ ...post, _site: r.value.site });
-                }
-              });
-            } else {
-              console.warn(`Fetch failed for site:`, r.reason);
-            }
-          });
-
-          if (!merged.length) {
-            const failed = results.filter((r) => r.status === "rejected");
-            if (failed.length === sitesToFetch.length) {
-              throw new Error(
-                isMulti
-                  ? "All selected sources failed to load."
-                  : "Search failed. Check your connection or proxy.",
-              );
-            }
-          }
-
-          // Sort by score descending; shuffle slightly across sites for variety
-          merged.sort((a, b) => (b.score || 0) - (a.score || 0));
-          searchResults = merged;
-          renderImages(isMulti);
+          searchResults = normalizeResults(raw, currentSite);
+          searchResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+          renderImages();
           updatePagination();
         } catch (err) {
           imageContainer.innerHTML =
@@ -1536,17 +1451,15 @@
 
       async function loadReq() {
         try {
+          currentSite = "danbooru";
           let tags = "-furry+-futanari";
           if (currentRating !== "all") tags += `+rating:${currentRating}`;
           else tags += "+rating:g";
           const apiUrl = `https://danbooru.donmai.us/posts.json?tags=${tags}&page=${apiPage}&limit=100`;
           const raw = await fetchWithFallback(apiUrl, "danbooru");
-          searchResults = normalizeResults(raw, "danbooru").map((p) => ({
-            ...p,
-            _site: "danbooru",
-          }));
+          searchResults = normalizeResults(raw, "danbooru");
           searchResults.sort((a, b) => (b.score || 0) - (a.score || 0));
-          renderImages(false);
+          renderImages();
           updatePagination();
         } catch (e) {
           console.error("Initial load failed:", e);
@@ -1602,14 +1515,7 @@
         return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
       }
 
-      const SITE_LABELS = {
-        danbooru: "Danbooru",
-        yandere: "Yande.re",
-        gelbooru: "Gelbooru",
-        kona: "Konachan",
-      };
-
-      function renderImages(showSiteBadge = false) {
+      function renderImages() {
         imageContainer.innerHTML = "";
         if (!searchResults.length) {
           imageContainer.innerHTML =
@@ -1634,13 +1540,12 @@
           // For Gelbooru: prefer preview_url (smaller, less likely hotlink-blocked),
           // then proxy the image URL through the same proxy to bypass Referer/CORS checks.
           let previewUrl;
-          const postSite = post._site || [...selectedSites][0];
           if (isVideo) {
             previewUrl = post.preview_url;
-          } else if (postSite === "gelbooru") {
+          } else if (currentSite === "gelbooru") {
             const rawUrl = post.preview_url || post.sample_url || post.file_url;
             previewUrl = rawUrl ? PROXY_MY(rawUrl) : rawUrl;
-          } else if (postSite === "yandere") {
+          } else if (currentSite === "yandere") {
             previewUrl = post.preview_url;
           } else {
             previewUrl = post.sample_url || post.preview_url || post.file_url;
@@ -1668,14 +1573,9 @@
               ? `<div class="video-badge">▶ ${formatDuration(post.duration)}</div>`
               : "";
 
-          const siteBadgeHtml =
-            showSiteBadge && post._site
-              ? `<div class="site-badge">${SITE_LABELS[post._site] || post._site}</div>`
-              : "";
-
           wrap.innerHTML = `
             <div class="img-skeleton"></div>
-            ${resBadge}${vidBadge}${siteBadgeHtml}
+            ${resBadge}${vidBadge}
             <div class="img-overlay"></div>
             <img src="${previewUrl}"
               alt="result"
@@ -1696,7 +1596,7 @@
             wrap.querySelector(".img-skeleton")?.remove();
             // If the image fails (especially Gelbooru), try the plain preview_url as last resort
             if (
-              postSite === "gelbooru" &&
+              currentSite === "gelbooru" &&
               this.src !== (post.preview_url || "")
             ) {
               this.src = post.preview_url || post.sample_url || "";
@@ -1750,7 +1650,7 @@
             const rawFullUrl = post.file_url;
             // For Gelbooru: proxy the full-size image URL too, to bypass hotlink protection
             const fullUrl =
-              postSite === "gelbooru" && rawFullUrl
+              currentSite === "gelbooru" && rawFullUrl
                 ? PROXY_MY(rawFullUrl)
                 : rawFullUrl;
             const isVid =
@@ -1844,7 +1744,7 @@
       prevPageButton.addEventListener("click", () => {
         if (webPage > 1) {
           webPage--;
-          renderImages(selectedSites.size > 1);
+          renderImages();
           updatePagination();
         } else if (apiPage > 1) {
           apiPage--;
@@ -1856,7 +1756,7 @@
         const total = Math.ceil(searchResults.length / resultsPerPage);
         if (webPage < total) {
           webPage++;
-          renderImages(selectedSites.size > 1);
+          renderImages();
           updatePagination();
         } else {
           apiPage++;
@@ -1866,30 +1766,13 @@
       });
 
       /* ─── Site / Rating selectors ─── */
-      function updateSiteHint() {
-        const hint = document.getElementById("multi-source-hint");
-        if (selectedSites.size > 1) {
-          hint.textContent = `Merging ${selectedSites.size} sources — results combined`;
-          hint.style.color = "var(--accent)";
-        } else {
-          hint.textContent = "Tap multiple sites to merge results";
-          hint.style.color = "";
-        }
-      }
-
       document.querySelectorAll(".site-button").forEach((btn) => {
         btn.addEventListener("click", function () {
-          const site = this.dataset.site;
-          if (selectedSites.has(site)) {
-            // Don't allow deselecting the last one
-            if (selectedSites.size === 1) return;
-            selectedSites.delete(site);
-            this.classList.remove("active");
-          } else {
-            selectedSites.add(site);
-            this.classList.add("active");
-          }
-          updateSiteHint();
+          document
+            .querySelectorAll(".site-button")
+            .forEach((b) => b.classList.remove("active"));
+          this.classList.add("active");
+          currentSite = this.dataset.site;
           if (searchInput.value.trim()) {
             webPage = 1;
             performSearch();
