@@ -696,7 +696,7 @@
       #gallery-zoom {
         position: fixed;
         bottom: 16px;
-        left: 14px;
+        right: 14px;
         z-index: 600;
         display: flex;
         align-items: center;
@@ -889,102 +889,32 @@
         left: 0;
         right: 0;
         z-index: 6;
-        background: transparent;
-        padding: 28px 10px 10px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        align-content: flex-end;
-        pointer-events: none;
-        visibility: hidden;
-        transform: translateY(8px);
-        transition:
-          transform 0.3s ease,
-          visibility 0s linear 0.3s;
-        border-radius: 0 0 var(--radius) var(--radius);
-        max-height: 75%;
-        overflow: hidden;
-      }
-      .img-tag-panel::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        z-index: 0;
-        border-radius: inherit;
         background: linear-gradient(
           to top,
           rgba(6, 10, 26, 0.97) 0%,
           rgba(10, 16, 38, 0.92) 30%,
           transparent 100%
         );
-        opacity: 0;
-        transition: opacity 0.35s ease;
+        /* backdrop-filter: blur(8px); */
+        padding: 28px 10px 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-content: flex-end;
         pointer-events: none;
-      }
-      .img-wrapper:hover .img-tag-panel,
-      .img-tag-panel.expanded {
-        visibility: visible;
-        transform: translateY(0);
-        pointer-events: auto;
-        transition:
-          transform 0.3s ease,
-          visibility 0s;
-      }
-      .img-wrapper:hover .img-tag-panel::before,
-      .img-tag-panel.expanded::before {
-        opacity: 1;
-      }
-      .img-tag-panel.expanded {
-        max-height: 92%;
-        overflow-y: auto;
-        align-content: flex-start;
-      }
-
-      @keyframes tagSlideIn {
-        from {
-          opacity: 0;
-          transform: translateX(14px);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(0);
-        }
-      }
-
-      @keyframes tagSlideUp {
-        from {
-          opacity: 0;
-          transform: translateY(12px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .img-tag-panel .tag-chip,
-      .img-tag-panel .tag-more {
-        position: relative;
-        z-index: 1;
         opacity: 0;
+        transform: translateY(6px);
+        transition:
+          opacity 0.25s ease,
+          transform 0.25s ease;
+        border-radius: 0 0 var(--radius) var(--radius);
+        max-height: 75%;
+        overflow: hidden;
       }
-
-      .img-tag-panel:not(.expanded) .tag-chip,
-      .img-tag-panel:not(.expanded) .tag-more {
-        transform: translateX(14px);
+      .img-wrapper:hover .img-tag-panel {
+        opacity: 1;
+        transform: translateY(0);
       }
-
-      .img-wrapper:hover .img-tag-panel:not(.expanded) .tag-chip,
-      .img-wrapper:hover .img-tag-panel:not(.expanded) .tag-more {
-        animation: tagSlideIn 0.38s ease-out both;
-      }
-
-      .img-tag-panel.expanded .tag-chip,
-      .img-tag-panel.expanded .tag-more {
-        transform: translateY(12px);
-        animation: tagSlideUp 0.3s ease-out both;
-      }
-
       .img-tag-panel .tag-chip {
         background: rgba(80, 110, 200, 0.22);
         border: 1px solid rgba(150, 170, 255, 0.18);
@@ -996,50 +926,15 @@
         font-weight: 500;
         white-space: nowrap;
         line-height: 1.5;
-        cursor: pointer;
-        transition:
-          background 0.15s,
-          border-color 0.15s,
-          color 0.15s;
-      }
-      .img-tag-panel .tag-chip:hover {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: #fff;
       }
       .img-tag-panel .tag-more {
         font-size: 9px;
         font-family: var(--font-body);
-        font-weight: 600;
+        font-weight: 500;
         color: var(--text-muted);
         align-self: center;
-        padding: 2px 8px;
+        padding: 2px 6px;
         letter-spacing: 0.03em;
-        cursor: pointer;
-        border-radius: 5px;
-        border: 1px dashed rgba(150, 170, 255, 0.25);
-        transition:
-          background 0.15s,
-          color 0.15s,
-          border-color 0.15s;
-      }
-      .img-tag-panel .tag-more:hover {
-        background: rgba(80, 110, 200, 0.25);
-        color: var(--text);
-        border-color: rgba(150, 170, 255, 0.45);
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .img-tag-panel::before {
-          opacity: 1;
-          transition: none;
-        }
-        .img-tag-panel .tag-chip,
-        .img-tag-panel .tag-more {
-          opacity: 1;
-          transform: none;
-          animation: none !important;
-        }
       }
 
       /* ─── Pagination (fixed bottom bar) ─── */
@@ -1489,60 +1384,6 @@
         .getElementById("next-background")
         .addEventListener("click", () => changeBackground("next"));
 
-      /* ─── Gallery column zoom ─── */
-      const MIN_GALLERY_COLS = 2;
-      const MAX_GALLERY_COLS = 10;
-      let galleryColOffset = parseInt(
-        localStorage.getItem("galleryColOffset") || "0",
-        10,
-      );
-
-      function getDefaultGalleryCols() {
-        const w = window.innerWidth;
-        if (w <= 600) return 2;
-        if (w <= 900) return 3;
-        if (w <= 1400) return 4;
-        if (w <= 2000) return 5;
-        return 7;
-      }
-
-      function getGalleryCols() {
-        return Math.min(
-          MAX_GALLERY_COLS,
-          Math.max(MIN_GALLERY_COLS, getDefaultGalleryCols() + galleryColOffset),
-        );
-      }
-
-      function applyGalleryColumns() {
-        const cols = getGalleryCols();
-        const container = document.getElementById("imageContainer");
-        container.style.columns = `${cols} auto`;
-        document.getElementById("zoom-cols").textContent = cols;
-        document.getElementById("zoom-in").disabled =
-          cols <= MIN_GALLERY_COLS;
-        document.getElementById("zoom-out").disabled =
-          cols >= MAX_GALLERY_COLS;
-      }
-
-      function changeGalleryZoom(delta) {
-        const before = getGalleryCols();
-        galleryColOffset += delta;
-        const after = getGalleryCols();
-        if (after === before) {
-          galleryColOffset -= delta;
-          return;
-        }
-        localStorage.setItem("galleryColOffset", String(galleryColOffset));
-        applyGalleryColumns();
-      }
-
-      document
-        .getElementById("zoom-in")
-        .addEventListener("click", () => changeGalleryZoom(-1));
-      document
-        .getElementById("zoom-out")
-        .addEventListener("click", () => changeGalleryZoom(1));
-
       /* ─── Theme ─── */
       document.querySelectorAll("#theme-options div").forEach((opt) => {
         opt.addEventListener("click", () => {
@@ -1701,87 +1542,6 @@
         tagsContainer.innerHTML = "";
       }
 
-      const TAG_PANEL_LIMIT = 18;
-
-      function escapeHtml(str) {
-        return str
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/"/g, "&quot;");
-      }
-
-      function sortPostTags(tags) {
-        return [...tags].sort(
-          (a, b) => (window.tagMap?.[b] || 0) - (window.tagMap?.[a] || 0),
-        );
-      }
-
-      function searchFromGalleryTag(tag) {
-        const parts = searchInput.value.trim().split(" ").filter(Boolean);
-        if (!parts.includes(tag)) parts.push(tag);
-        const val = parts.join(" ");
-        searchInput.value = val;
-        topbarInput.value = val;
-        webPage = 1;
-        apiPage = 1;
-        performSearch();
-      }
-
-      function renderTagPanel(panel, allTags, expanded) {
-        const sorted = sortPostTags(allTags);
-        const visible = expanded ? sorted : sorted.slice(0, TAG_PANEL_LIMIT);
-        const hiddenCount = sorted.length - TAG_PANEL_LIMIT;
-        const staggerMs = expanded ? 16 : 38;
-
-        panel.innerHTML = visible
-          .map(
-            (t, i) =>
-              `<span class="tag-chip" data-tag="${escapeHtml(t)}" style="animation-delay:${i * staggerMs}ms">${escapeHtml(t)}</span>`,
-          )
-          .join("");
-
-        if (!expanded && hiddenCount > 0) {
-          panel.insertAdjacentHTML(
-            "beforeend",
-            `<span class="tag-more" data-action="expand" style="animation-delay:${visible.length * staggerMs}ms">+${hiddenCount} more</span>`,
-          );
-        } else if (expanded && sorted.length > TAG_PANEL_LIMIT) {
-          panel.insertAdjacentHTML(
-            "beforeend",
-            `<span class="tag-more" data-action="collapse" style="animation-delay:${visible.length * staggerMs}ms">show less</span>`,
-          );
-        }
-      }
-
-      function attachTagPanel(wrap, tagString) {
-        const allTags = (tagString || "").split(" ").filter(Boolean);
-        if (!allTags.length) return;
-
-        const panel = document.createElement("div");
-        panel.className = "img-tag-panel";
-        renderTagPanel(panel, allTags, false);
-
-        panel.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const chip = e.target.closest(".tag-chip");
-          if (chip?.dataset.tag) {
-            searchFromGalleryTag(chip.dataset.tag);
-            return;
-          }
-          const more = e.target.closest(".tag-more");
-          if (!more) return;
-          if (more.dataset.action === "expand") {
-            panel.classList.add("expanded");
-            renderTagPanel(panel, allTags, true);
-          } else if (more.dataset.action === "collapse") {
-            panel.classList.remove("expanded");
-            renderTagPanel(panel, allTags, false);
-          }
-        });
-
-        wrap.appendChild(panel);
-      }
-
       searchInput.addEventListener(
         "input",
         debounce(async (e) => {
@@ -1844,18 +1604,12 @@
       // Rating values differ per site:
       // Danbooru:  g / s / q / e
       // Yande.re & Konachan: s / q / e  (no "g"; safest = "s")
-      // Gelbooru:  general / sensitive / questionable / explicit
-      //   ("safe" is deprecated on Gelbooru — old safe tier is now "sensitive")
+      // Gelbooru:  general / safe / questionable / explicit
       const RATING_MAP = {
         danbooru: { g: "g", s: "s", q: "q", e: "e" },
         yandere: { g: "s", s: "s", q: "q", e: "e" },
         kona: { g: "s", s: "s", q: "q", e: "e" },
-        gelbooru: {
-          g: "general",
-          s: "sensitive",
-          q: "questionable",
-          e: "explicit",
-        },
+        gelbooru: { g: "general", s: "safe", q: "questionable", e: "explicit" },
       };
 
       function buildTagsForSite(baseTags, site) {
@@ -1978,10 +1732,8 @@
             score: p.score,
             duration: p.media_asset?.duration,
           }));
-        if (site === "gelbooru") {
-          const raw = results.post;
-          const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
-          return list.map((p) => ({
+        if (site === "gelbooru")
+          return (results.post || []).map((p) => ({
             id: p.id,
             file_url: p.file_url,
             preview_url: p.preview_url || p.sample_url || p.file_url,
@@ -1993,7 +1745,6 @@
             rating: p.rating,
             score: p.score,
           }));
-        }
         return results.map((p) => ({
           id: p.id,
           file_url: p.file_url,
@@ -2118,13 +1869,30 @@
             }
           });
 
-          // Tag panel — hover overlay with clickable tags
+          // Tag panel — injected once into wrap, shown via CSS hover
           if (window.matchMedia("(pointer:fine)").matches) {
-            attachTagPanel(wrap, post.tags || img.dataset.tags);
+            const tags = (img.dataset.tags || "").split(" ").filter(Boolean);
+            if (tags.length) {
+              const sorted = [...tags]
+                .sort(
+                  (a, b) =>
+                    (window.tagMap?.[b] || 0) - (window.tagMap?.[a] || 0),
+                )
+                .slice(0, 18);
+              const panel = document.createElement("div");
+              panel.className = "img-tag-panel";
+              panel.innerHTML =
+                sorted
+                  .map((t) => `<span class="tag-chip">${t}</span>`)
+                  .join("") +
+                (tags.length > 18
+                  ? `<span class="tag-more">+${tags.length - 18}</span>`
+                  : "");
+              wrap.appendChild(panel);
+            }
           }
           // Click → open source page (Gelbooru/Yandere) or Fancybox (others)
           wrap.addEventListener("click", (e) => {
-            if (e.target.closest(".img-tag-panel")) return;
             e.preventDefault();
 
             // Gelbooru & Yandere: go directly to the post page on the source site
@@ -2164,7 +1932,6 @@
                     "";
                   document.getElementById("theme-switcher").style.display = "";
                   document.getElementById("pagination").style.display = "";
-                  document.getElementById("gallery-zoom").style.display = "";
                 },
               },
             };
@@ -2172,7 +1939,6 @@
               "none";
             document.getElementById("theme-switcher").style.display = "none";
             document.getElementById("pagination").style.display = "none";
-            document.getElementById("gallery-zoom").style.display = "none";
 
             if (isVid) {
               opts.Video = { autoStart: false, showControls: true, volume: 1 };
@@ -2316,8 +2082,6 @@
         preloadBackgroundImages();
         setRandomBackground();
         loadTags();
-        applyGalleryColumns();
-        window.addEventListener("resize", debounce(applyGalleryColumns, 150));
         apiPage = Math.floor(Math.random() * 100) + 1;
 
         const savedTheme = localStorage.getItem("theme") || "default";

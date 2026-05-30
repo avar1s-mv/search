@@ -889,102 +889,38 @@
         left: 0;
         right: 0;
         z-index: 6;
-        background: transparent;
-        padding: 28px 10px 10px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        align-content: flex-end;
-        pointer-events: none;
-        visibility: hidden;
-        transform: translateY(8px);
-        transition:
-          transform 0.3s ease,
-          visibility 0s linear 0.3s;
-        border-radius: 0 0 var(--radius) var(--radius);
-        max-height: 75%;
-        overflow: hidden;
-      }
-      .img-tag-panel::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        z-index: 0;
-        border-radius: inherit;
         background: linear-gradient(
           to top,
           rgba(6, 10, 26, 0.97) 0%,
           rgba(10, 16, 38, 0.92) 30%,
           transparent 100%
         );
-        opacity: 0;
-        transition: opacity 0.35s ease;
+        padding: 28px 10px 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-content: flex-end;
         pointer-events: none;
+        opacity: 0;
+        transform: translateY(6px);
+        transition:
+          opacity 0.25s ease,
+          transform 0.25s ease;
+        border-radius: 0 0 var(--radius) var(--radius);
+        max-height: 75%;
+        overflow: hidden;
       }
       .img-wrapper:hover .img-tag-panel,
       .img-tag-panel.expanded {
-        visibility: visible;
+        opacity: 1;
         transform: translateY(0);
         pointer-events: auto;
-        transition:
-          transform 0.3s ease,
-          visibility 0s;
-      }
-      .img-wrapper:hover .img-tag-panel::before,
-      .img-tag-panel.expanded::before {
-        opacity: 1;
       }
       .img-tag-panel.expanded {
         max-height: 92%;
         overflow-y: auto;
         align-content: flex-start;
       }
-
-      @keyframes tagSlideIn {
-        from {
-          opacity: 0;
-          transform: translateX(14px);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(0);
-        }
-      }
-
-      @keyframes tagSlideUp {
-        from {
-          opacity: 0;
-          transform: translateY(12px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .img-tag-panel .tag-chip,
-      .img-tag-panel .tag-more {
-        position: relative;
-        z-index: 1;
-        opacity: 0;
-      }
-
-      .img-tag-panel:not(.expanded) .tag-chip,
-      .img-tag-panel:not(.expanded) .tag-more {
-        transform: translateX(14px);
-      }
-
-      .img-wrapper:hover .img-tag-panel:not(.expanded) .tag-chip,
-      .img-wrapper:hover .img-tag-panel:not(.expanded) .tag-more {
-        animation: tagSlideIn 0.38s ease-out both;
-      }
-
-      .img-tag-panel.expanded .tag-chip,
-      .img-tag-panel.expanded .tag-more {
-        transform: translateY(12px);
-        animation: tagSlideUp 0.3s ease-out both;
-      }
-
       .img-tag-panel .tag-chip {
         background: rgba(80, 110, 200, 0.22);
         border: 1px solid rgba(150, 170, 255, 0.18);
@@ -1027,19 +963,6 @@
         background: rgba(80, 110, 200, 0.25);
         color: var(--text);
         border-color: rgba(150, 170, 255, 0.45);
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .img-tag-panel::before {
-          opacity: 1;
-          transition: none;
-        }
-        .img-tag-panel .tag-chip,
-        .img-tag-panel .tag-more {
-          opacity: 1;
-          transform: none;
-          animation: none !important;
-        }
       }
 
       /* ─── Pagination (fixed bottom bar) ─── */
@@ -1731,24 +1654,23 @@
         const sorted = sortPostTags(allTags);
         const visible = expanded ? sorted : sorted.slice(0, TAG_PANEL_LIMIT);
         const hiddenCount = sorted.length - TAG_PANEL_LIMIT;
-        const staggerMs = expanded ? 16 : 38;
 
         panel.innerHTML = visible
           .map(
-            (t, i) =>
-              `<span class="tag-chip" data-tag="${escapeHtml(t)}" style="animation-delay:${i * staggerMs}ms">${escapeHtml(t)}</span>`,
+            (t) =>
+              `<span class="tag-chip" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</span>`,
           )
           .join("");
 
         if (!expanded && hiddenCount > 0) {
           panel.insertAdjacentHTML(
             "beforeend",
-            `<span class="tag-more" data-action="expand" style="animation-delay:${visible.length * staggerMs}ms">+${hiddenCount} more</span>`,
+            `<span class="tag-more" data-action="expand">+${hiddenCount} more</span>`,
           );
         } else if (expanded && sorted.length > TAG_PANEL_LIMIT) {
           panel.insertAdjacentHTML(
             "beforeend",
-            `<span class="tag-more" data-action="collapse" style="animation-delay:${visible.length * staggerMs}ms">show less</span>`,
+            `<span class="tag-more" data-action="collapse">show less</span>`,
           );
         }
       }
@@ -1844,18 +1766,12 @@
       // Rating values differ per site:
       // Danbooru:  g / s / q / e
       // Yande.re & Konachan: s / q / e  (no "g"; safest = "s")
-      // Gelbooru:  general / sensitive / questionable / explicit
-      //   ("safe" is deprecated on Gelbooru — old safe tier is now "sensitive")
+      // Gelbooru:  general / safe / questionable / explicit
       const RATING_MAP = {
         danbooru: { g: "g", s: "s", q: "q", e: "e" },
         yandere: { g: "s", s: "s", q: "q", e: "e" },
         kona: { g: "s", s: "s", q: "q", e: "e" },
-        gelbooru: {
-          g: "general",
-          s: "sensitive",
-          q: "questionable",
-          e: "explicit",
-        },
+        gelbooru: { g: "general", s: "safe", q: "questionable", e: "explicit" },
       };
 
       function buildTagsForSite(baseTags, site) {
@@ -1978,10 +1894,8 @@
             score: p.score,
             duration: p.media_asset?.duration,
           }));
-        if (site === "gelbooru") {
-          const raw = results.post;
-          const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
-          return list.map((p) => ({
+        if (site === "gelbooru")
+          return (results.post || []).map((p) => ({
             id: p.id,
             file_url: p.file_url,
             preview_url: p.preview_url || p.sample_url || p.file_url,
@@ -1993,7 +1907,6 @@
             rating: p.rating,
             score: p.score,
           }));
-        }
         return results.map((p) => ({
           id: p.id,
           file_url: p.file_url,
